@@ -7,12 +7,12 @@
 #include <string.h>
 
 #include "utils.h"
-#include "linkLayer.h"sizeof(
+#include "linkLayer.h"
 
 int appTransmiter(char* fileName){//
 	int fdData = open(fileName,O_RDONLY);
-	if(fdData ==- 1) {
-		printf("Nao conseguio abrir ficheiro de fdData");
+	if(fdData == -1) {
+		printf("Nao conseguio abrir ficheiro de fdData\n");
 		return -1;
 	}
 	int fd = llopen(0,TRANSMITER);
@@ -31,15 +31,17 @@ int appTransmiter(char* fileName){//
 	 * 0 – tamanho do ficheiro,
 	 * 1 – nome doficheiro
 	 */
-	int controlPacketSize = 5 + sizeof(fileSize) + sizeof(fileName);
+	int controlPacketSize = 5 + sizeof(fileSize) + sizeof(fileName);//sizeof(fileName) da sizeof char*, nao string
 	char* controlPacket = malloc(controlPacketSize);
 	controlPacket[0] = 0x02; //C
 	controlPacket[1] = 0; //T: 0 = comprimento do ficheiro
 	controlPacket[2] = sizeof(fileSize); //L
-	controlPacket[3] = fileSize;
-	controlPacket[4] = 1; //T: 1 = nome do ficheiro
-	controlPacket[5] = sizeof(fileName); //L
-	controlPacket[6] = fileName;
+	size_t * locationSize = (size_t* )(&controlPacket[3]);
+	*locationSize = fileSize;
+	controlPacket[3+sizeof(size_t)] = 1; //T: 1 = nome do ficheiro
+	controlPacket[4+sizeof(size_t)] = strlen(fileName); //L
+	strcpy(&controlPacket[6],fileName);
+
 
 	if(!llwrite(fd,controlPacket,controlPacketSize)){
 		printf("Erro no llwrite\n");
@@ -84,9 +86,11 @@ int appReceiver(char* fileName){//
 		return -1;
 	}
 	printf("saiu do llopen\n");
-	while(1) {//NOT FINAL
-		char* pacotefdData;
-		int size = llread(fd, pacotefdData);
+	char* pacotefdData= NULL;
+	pacotefdData = realloc(pacotefdData,1000);//Alter
+	int size=0;
+	int controleSize = llread(fd, pacotefdData);
+	while(0<(size = llread(fd, pacotefdData))) {//NOT FINAL
 		int sizeWrite = 0;
 		while(size - sizeWrite> 0){
 			sizeWrite += write(fdData, pacotefdData + sizeWrite, size);
@@ -100,10 +104,10 @@ int main(int argc, char** argv){//ENVIAR
 	if (argc != 3){//TODO tpacotefdDataestar
 		printf("Usage:\tapp receive fileName\n\tex: app 0 teste.txt\n");
 	}
-	if(strcmp(argv[1],"0") == 0){//TODO MAl??
+	if(strcmp(argv[1],"0") == 0){
 		return appTransmiter(argv[2]);
 	}
-	if(strcmp(argv[1],"1") == 0){//TODO mal??
+	if(strcmp(argv[1],"1") == 0){
 		return appReceiver(argv[2]);
 	}
 	return -1;
