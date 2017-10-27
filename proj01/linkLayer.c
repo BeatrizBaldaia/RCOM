@@ -38,7 +38,7 @@ void alarm_handler(int sig) {
   } else {
     state = STATE_RETRY;
   }
-
+}
 /**
     State 0 of the state machine. Updates the current state (state)
     to STATE_1 if reads a FLAG
