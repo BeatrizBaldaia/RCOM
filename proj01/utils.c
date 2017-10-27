@@ -53,16 +53,3 @@ unsigned char * destuffing (unsigned char * dataBlock, int * dataBlockSize) {
   *dataBlockSize = destuffedDataBlock_it;
   return destuffedDataBlock;
 }
-/*
-int main(int argc, char** argv){
-  unsigned char data[1000];
-  data[0] = 0x02;
-  data[1] = 0x7D;
-  data[2] = 0X5D;
-  int size = strlen(data);
-
-  //printf("tamanho: %d   string: %02X %02X\n", 2,  data[0], data[1]);
-  char* newStr = destuffing(data, &size);
-  printf("destuffed: %02X %02X    tamanho: %d\n", newStr[0], newStr[1], size);
-
-}*/

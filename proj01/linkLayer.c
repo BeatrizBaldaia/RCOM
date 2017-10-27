@@ -354,7 +354,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
   			     if(write(fd, rej, 5) != 5) {
                printf("Error writing to the serial port.\n");
              }
-             state = STATE_1;
+             state = STATE_0;
           }
 
       } else {//vai guardando bytes de dados
@@ -402,7 +402,7 @@ int receiverWaitingForDISC(int fd) {
 
 int llopen(int port, int status) {
   linkLayer.baudRate = BAUDRATE;
-  linkLayer.timeout = 1;
+  linkLayer.timeout = 3;
   linkLayer.numTransmissions = 3;
   if(port == 0) {
     strcpy(linkLayer.port, PORT_0);
@@ -527,8 +527,8 @@ int llread(int fd, unsigned char * buffer) {
 }
 
 int llclose(int fd) {
-int result=0;
-if(task == TRANSMITER) {
+  int result=0;
+  if(task == TRANSMITER) {
     do {
       if(write(fd, transmiterDISC, 5) != 5) {
         printf("Error writing to the serial port.\n");
@@ -548,20 +548,22 @@ if(task == TRANSMITER) {
       resetTerminalAttributes(fd);
       close(fd);
       return 0;
-    } else {
+    }
+    else {
       printf("Force the close...\n");
       resetTerminalAttributes(fd);
       return -1;
     }
 
-  } else {//RECEIVER
-      if(receiverWaitingForDISC(fd) != 0) {
+  }
+  else {//RECEIVER
+    if(receiverWaitingForDISC(fd) != 0) {
         printf("Error closing the communication!\n");
         resetTerminalAttributes(fd);
         return -1;
       }
 
-      if(write(fd, receiverDISC, 5) != 5) {
+    if(write(fd, receiverDISC, 5) != 5) {
         printf("Error writing to the serial port.\n");
         return -1;
       }
