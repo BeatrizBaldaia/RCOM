@@ -41,7 +41,7 @@ int appTransmiter(char* fileName){//
 	*locationSize = fileSize;
 	controlPacket[3+sizeof(fileSize)] = 1; //T: 1 = nome do ficheiro
 	controlPacket[4+sizeof(fileSize)] = strlen(fileName); //L
-	strcpy(&controlPacket[6+sizeof(fileSize)],fileName);
+	strcpy(&controlPacket[5+sizeof(fileSize)],fileName);
 
 
 	if(llwrite(fd,controlPacket,controlPacketSize) <= 0){
