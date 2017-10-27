@@ -24,8 +24,11 @@ struct termios oldtio,newtio;
 int timeoutCount = 0, state = STATE_0;
 int S = 0;
 int task;
+
 /**
-* Vai apanhar e tratar o SIGALRM
+    Handles the SIGALRM
+
+    @param sig The signal number
 */
 void alarm_handler(int sig) {
   timeoutCount++;
@@ -36,19 +39,26 @@ void alarm_handler(int sig) {
     state = STATE_RETRY;
   }
 
-}
 /**
-* Preenche a struct linkLayer
-*/
-void initProtocol() {
+    State 0 of the state machine. Updates the current state (state)
+    to STATE_1 if reads a FLAG
 
-}
+    @param bytePacket The read byte.
+*/
 void inSTATE_0 (unsigned char bytePacket) {
   if(bytePacket == FLAG){
     state = STATE_1;
   }
 }
 
+/**
+    State 1 of the state machine. Updates the current state (state)
+    to STATE_2 if reads the address field.
+    Stays in state 1 if receives a FLAG.
+    Returns to state 0, otherwise.
+
+    @param bytePacket The read byte.
+*/
 void inSTATE_1 (unsigned char bytePacket) {
   if(bytePacket == FLAG) {
     state = STATE_1;
@@ -59,6 +69,15 @@ void inSTATE_1 (unsigned char bytePacket) {
   }
 }
 
+/**
+    State 2 of the state machine. Updates the current state (state)
+    to STATE_3 if reads the control field appropriate to the
+    user task.
+    Goes back to state 1 if receives a FLAG.
+    Returns to state 0, otherwise.
+
+    @param bytePacket The read byte.
+*/
 void inSTATE_2 (unsigned char bytePacket, int status) {
   if(bytePacket == FLAG) {
     state = STATE_1;
@@ -80,6 +99,16 @@ void inSTATE_2 (unsigned char bytePacket, int status) {
   }
 }
 
+/**
+    State 3 of the state machine. Updates the current state (state)
+    to STATE_4 if the BCC1 is right (BCC1 = A ^ C).
+    Goes back to state 1 if receives a FLAG.
+    Returns to state 0, otherwise.
+
+    @param bytePacket The read byte.
+    @param status The user's task.
+    @param retransmit Variable to warn if the transmiter will have to retransmit the I frame
+*/
 void inSTATE_3 (unsigned char bytePacket, int status, int * retransmit) {
   if(bytePacket == FLAG) {
     state = STATE_1;
@@ -101,6 +130,16 @@ void inSTATE_3 (unsigned char bytePacket, int status, int * retransmit) {
   }
 }
 
+/**
+    State 4 of the state machine. Successful end of the state
+    machine if a FLAG is now received.
+    Returns to state 0, otherwise.
+
+    @param bytePacket The read byte.
+    @param status The user's task.
+    @param retransmit Variable to warn if the transmiter will have to retransmit the I frame
+    @return 0 if succeed, -1 otherwise (need to read the all frame again)
+*/
 int inSTATE_4 (unsigned char bytePacket, int * retransmit) {
   if(bytePacket == FLAG) {
     state = STATE_0;
