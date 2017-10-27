@@ -114,8 +114,8 @@ int appReceiver(){//
 	for ( k = 0; i < controleSize; i++, k++) {
 		fileName[k]=pacotefdData[i];
 	}
-
-	int fdData = open(fileName,O_CREAT|O_EXCL|O_RDWR|O_APPEND,0666);
+printf("%s\n",fileName );
+	int fdData = open(fileName,O_CREAT|O_RDWR|O_TRUNC,0666);
 	if(fdData == -1){
 		printf("Nao conseguiu abrir ficheiro de fdData\n");
 		return -1;
