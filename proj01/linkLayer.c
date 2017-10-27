@@ -276,7 +276,8 @@ int transmiterWaitingForPacket(int fd, int status) {
         } else if(result == -2) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
-          timeoutCount = 0;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
+              sleep(1);//AnabelaSilva
+          timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           //a recepcao de rej significa que esta aberta a comunicacao
           if(timeoutCount == linkLayer.numTransmissions) {
             state = STATE_ABORT;
@@ -313,7 +314,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
         state = STATE_1;
       } else if((S == 0 && bytePacket == 0x00) || (S == 1 && bytePacket == 0x40)) { //caso em que recetor esta a receber uma trama I
         state = STATE_3;
-      }  else if((S == 0 && bytePacket == 0x40) || (S == 1 && bytePacket == 0x00)) { //trama e um duplicado; ignorar e enviar um RR_FLAG
+      } else if((S == 0 && bytePacket == 0x40) || (S == 1 && bytePacket == 0x00)) { //trama e um duplicado; ignorar e enviar um RR_FLAG
         state = STATE_3;
       } else {
         state = STATE_0;
@@ -325,6 +326,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
       } else if ((S == 0 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x00)) || (S == 1 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x40))) {
         //cabecalho foi lido com sucesso. enviar REJ cajo dados (D1 ... Dn) estejam mal
         state = STATE_4;
+        dataSize = 0;
       } else if((S == 0 && bytePacket == 0x40) || (S == 1 && bytePacket == 0x00)) { //trama e um duplicado; ignorar e enviar um RR_FLAG
           if(S) {
             rr[2] = RR_FLAG ^ 0x80;
@@ -490,6 +492,11 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
   int result = 0;//INICIAR LCOM
   do {
+    int i=0;
+    for(i = 0; i < packetILength; i++){
+      printf("Packet :%x\n",packetI[i] );
+    }
+    printf("Controlo %x\n",packetI[2] );
     if(write(fd, packetI, packetILength) != packetILength) {
     printf("Error writing to the serial port.\n");
     return -1;
@@ -513,7 +520,7 @@ int llread(int fd, unsigned char * buffer) {
   buffer = memcpy(buffer, aux, bufferSize);
   free(aux);
 	if(bufferSize != -1) {
-        if(S==0) {
+      if(S==0) {
           rr[2] = RR_FLAG ^ 0x80;
           rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG ^ 0x80;
 		  S = 1;
