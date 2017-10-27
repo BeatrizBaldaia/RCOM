@@ -90,42 +90,32 @@ int appReceiver(){//
 	pacotefdData = realloc(pacotefdData,1000);//Alter
 	int size=0;
 	unsigned char n = 0;
-	int controleSize = llread(fd, pacotefdData);
-	char* fileName = malloc(controleSize); 
-	int k = 0;
+	int controleSize = llread(fd, pacotefdData); //Leu pacote de controle
+
+	char* fileName = "Error";//malloc(controleSize);
+/*fileName tentar ver problema*/
 	int i = 0;
-	if (pacotefdData[1] == 0) {
-	    k = pacotefdData[2] + 5;
-	}
-	if (pacotefdData[1] == 1) {
-	    controleSize = pacotefdData[2] + 3;
-	    k = 3;
+
+	for(i = 0; i < controleSize; i++){
+		printf("%c\n",pacotefdData[i] );
 	}
 	/** Type
 	 * 0 – tamanho do ficheiro,
 	 * 1 – nome doficheiro
 	 */
-	for( i = 0; k < controleSize;k++,i++){
-	    fileName[i]=pacotefdData[k];
-	}
-	fileName[i] = '\0';
-	printf("Nome do ficheiro :%s", fileName);
+
 	int fdData = open(fileName,O_CREAT|O_EXCL|O_RDWR|O_APPEND,0666);
 	if(fdData == -1){
-		printf("Nao conseguiu abrir ficheiro de fdData");
+		printf("Nao conseguiu abrir ficheiro de fdData\n");
 		return -1;
 	}
-	
+
 	while(0<(size = llread(fd, pacotefdData))) {//NOT FINAL
 		if((pacotefdData[0] == 1) && (pacotefdData[1] == n)){
 			n++;
 			int sizeWrite = 4;
 			int stillNeedToWrite=(size - sizeWrite);
 			while((stillNeedToWrite=((size - sizeWrite)))> 0){
-                //write(STDOUT_FILENO,pacotefdData + sizeWrite, stillNeedToWrite);
-								// for(int k = 0; k < stillNeedToWrite; k++) {
-								// 	printf("%X\n", pacotefdData[sizeWrite + k]);
-								// }
 				sizeWrite += write(fdData, pacotefdData + sizeWrite, stillNeedToWrite);
 		}
 		}else break;
@@ -135,16 +125,13 @@ int appReceiver(){//
 	return -1;
 }
 
-
 int main(int argc, char** argv){//ENVIAR
-	if (argc != 3){//TODO tpacotefdDataestar
-		printf("Usage:\tapp receive fileName\n\tex: app 0 teste.txt\n");
+
+	if(argc == 2){
+		return appTransmiter(argv[1]);
 	}
-	if(strcmp(argv[1],"0") == 0){
-		return appTransmiter(argv[2]);
-	}
-	if(strcmp(argv[1],"1") == 0){
-		return appReceiver(argv[2]);
+	if(argc == 1){
+		return appReceiver();
 	}
 	return -1;
 }
