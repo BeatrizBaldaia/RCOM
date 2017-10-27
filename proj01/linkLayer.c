@@ -492,10 +492,10 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
   int result = 0;//INICIAR LCOM
   do {
-    int i=0;
-    for(i = 0; i < packetILength; i++){
-      printf("Packet :%x\n",packetI[i] );
-    }
+  //  int i=0;
+    //for(i = 0; i < packetILength; i++){
+      //printf("Packet :%x\n",packetI[i] );
+    //}
     printf("Controlo %x\n",packetI[2] );
     if(write(fd, packetI, packetILength) != packetILength) {
     printf("Error writing to the serial port.\n");
