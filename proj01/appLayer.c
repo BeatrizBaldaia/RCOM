@@ -10,6 +10,7 @@
 #include "linkLayer.h"
 
 int appTransmiter(char* fileName){//
+	printf("%s\n %d\n",fileName,strlen(fileName));
 	int fdData = open(fileName,O_RDONLY);
 	if(fdData == -1) {
 		printf("Nao conseguio abrir ficheiro de fdData\n");
@@ -31,7 +32,7 @@ int appTransmiter(char* fileName){//
 	 * 0 – tamanho do ficheiro,
 	 * 1 – nome doficheiro
 	 */
-	int controlPacketSize = 5 + sizeof(fileSize) + sizeof(fileName);//sizeof(fileName) da sizeof unsigned char*, nao string
+	int controlPacketSize = 5 + sizeof(fileSize) + strlen(fileName);//sizeof(fileName) da sizeof unsigned char*, nao string
 	unsigned char* controlPacket = malloc(controlPacketSize);
 	controlPacket[0] = 0x02; //C
 	controlPacket[1] = 0; //T: 0 = comprimento do ficheiro
@@ -110,7 +111,7 @@ int appReceiver(){//
 		controleSize = pacotefdData[2] + 3;
 	}
 	int k = 0;
-	for (i = 0, k = 0; i < controleSize; i++, k++) {
+	for ( k = 0; i < controleSize; i++, k++) {
 		fileName[k]=pacotefdData[i];
 	}
 
