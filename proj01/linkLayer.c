@@ -276,7 +276,8 @@ int transmiterWaitingForPacket(int fd, int status) {
         } else if(result == -2) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
-          timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
+          timeoutCount = 0;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
+          //a recepcao de rej significa que esta aberta a comunicacao
           if(timeoutCount == linkLayer.numTransmissions) {
             state = STATE_ABORT;
             timeoutCount = 0;
@@ -350,7 +351,8 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
             (*dataBlockSize) = destuffedDataSize;
             return destuffedData;
           } else {//cabecalho certo, mas dados errados; reenviar trama I
-  			     printf("BCC errado\n");
+             free(destuffedData);
+             printf("BCC errado\n");
   			     if(write(fd, rej, 5) != 5) {
                printf("Error writing to the serial port.\n");
              }
@@ -466,7 +468,7 @@ int llopen(int port, int status) {
 int llwrite(int fd, unsigned char * buffer, int length) {
   unsigned char BCC2 = generateBCC(buffer, length);
   int stuffedBCC2Size = 1;
-  unsigned char * stuffedBCC2 = stuffing (&BCC2, &stuffedBCC2Size);//Nao manda um char*??
+  unsigned char * stuffedBCC2 = stuffing (&BCC2, &stuffedBCC2Size);
   int stuffedBufferSize = length;
   unsigned char * stuffedBuffer = stuffing (buffer, &stuffedBufferSize);
   int packetILength = 5 + stuffedBCC2Size + stuffedBufferSize;
@@ -484,7 +486,7 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   packetI[3] = packetI[1] ^ packetI[2];//BCC1
   memcpy(packetI + 4, stuffedBuffer, stuffedBufferSize);//campo de informacao (D1 ... Dn)
   memcpy(packetI + stuffedBufferSize + 4, stuffedBCC2, stuffedBCC2Size); //BCC2
-
+  free(stuffedBCC2);//AnabelaSilva
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
   int result = 0;//INICIAR LCOM
   do {
@@ -501,6 +503,7 @@ int llwrite(int fd, unsigned char * buffer, int length) {
     close(fd);
     return -1;
   }
+  free (packetI);//AnabelaSilva ealteracao
   return length;
 }
 
@@ -508,6 +511,7 @@ int llread(int fd, unsigned char * buffer) {
   int bufferSize = -1;
   unsigned char * aux = waitingForPacketI(fd, &bufferSize);
   buffer = memcpy(buffer, aux, bufferSize);
+  free(aux);
 	if(bufferSize != -1) {
         if(S==0) {
           rr[2] = RR_FLAG ^ 0x80;
