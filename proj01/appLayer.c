@@ -93,7 +93,7 @@ int appReceiver(){//
 	unsigned char n = 0;
 	int controleSize = llread(fd, pacotefdData); //Leu pacote de controle
 
-	char* fileName = "Error";//malloc(controleSize);
+	char* fileName = malloc(controleSize);
   /*fileName tentar ver problema*/
 	int i = 0;
 
