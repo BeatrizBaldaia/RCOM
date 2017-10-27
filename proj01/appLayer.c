@@ -38,9 +38,9 @@ int appTransmiter(char* fileName){//
 	controlPacket[2] = sizeof(fileSize); //L
 	size_t * locationSize = (size_t* )(&controlPacket[3]);
 	*locationSize = fileSize;
-	controlPacket[3+sizeof(size_t)] = 1; //T: 1 = nome do ficheiro
-	controlPacket[4+sizeof(size_t)] = strlen(fileName); //L
-	strcpy(&controlPacket[6],fileName);
+	controlPacket[3+sizeof(fileSize)] = 1; //T: 1 = nome do ficheiro
+	controlPacket[4+sizeof(fileSize)] = strlen(fileName); //L
+	strcpy(&controlPacket[6+sizeof(fileSize)],fileName);
 
 
 	if(llwrite(fd,controlPacket,controlPacketSize) <= 0){
@@ -93,7 +93,7 @@ int appReceiver(){//
 	int controleSize = llread(fd, pacotefdData); //Leu pacote de controle
 
 	char* fileName = "Error";//malloc(controleSize);
-/*fileName tentar ver problema*/
+  /*fileName tentar ver problema*/
 	int i = 0;
 
 	for(i = 0; i < controleSize; i++){
@@ -102,7 +102,17 @@ int appReceiver(){//
 	/** Type
 	 * 0 – tamanho do ficheiro,
 	 * 1 – nome doficheiro
-	 */
+	*/
+	if (pacotefdData[1] == 0) {
+		i = 3 + pacotefdData[2] + 2;
+	} else {
+		i = 3;
+		controleSize = pacotefdData[2] + 3;
+	}
+	int k = 0;
+	for (i = 0, k = 0; i < controleSize; i++, k++) {
+		fileName[k]=pacotefdData[i];
+	}
 
 	int fdData = open(fileName,O_CREAT|O_EXCL|O_RDWR|O_APPEND,0666);
 	if(fdData == -1){
