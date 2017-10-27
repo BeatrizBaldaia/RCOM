@@ -97,7 +97,7 @@ int appReceiver(){//
 	int i = 0;
 
 	for(i = 0; i < controleSize; i++){
-		printf("%c\n",pacotefdData[i] );
+		printf("%X\n",pacotefdData[i] );
 	}
 	/** Type
 	 * 0 – tamanho do ficheiro,
