@@ -44,7 +44,7 @@ int appTransmiter(char* fileName){//
 	memcpy(&controlPacket[5 + sizeof(fileSize)], fileName, strlen(fileName));
 
 
-	if(llwrite(fd, controlPacket, controlPacketSize) <= 0){
+	if(llwrite(fd, controlPacket, controlPacketSize) == -1){
 		printf("Error on llwrite\n");
 		return -1;
 	}
@@ -62,14 +62,14 @@ int appTransmiter(char* fileName){//
 		fdDataPacket[2]= size / 256;//LL
 		fdDataPacket[3]= size % 256;///*Numero*/ size % 256(5)
 
-		if(!llwrite(fd, fdDataPacket, size + 4)) {
+		if(llwrite(fd, fdDataPacket, size + 4) == -1) {
 			printf("Error on llwrite\n");
 			return -1;
 		}
 	}
 	//Enviar final
 	controlPacket[0] = 3;
-	if(!llwrite(fd, controlPacket, controlPacketSize)) {
+	if(llwrite(fd, controlPacket, controlPacketSize) == -1) {
 		printf("Error on llwrite\n");
 		return -1;
 	}

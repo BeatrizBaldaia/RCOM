@@ -246,7 +246,7 @@ int transmiterWaitingForPacket(int fd, int status) {
       return -1;
     } else if(state == STATE_RETRY) {
       if(status != RECEIVER) {
-        printf("TIMEOUT %d\n\n", timeoutCount + 1);
+        printf("TIMEOUT %d\n\n", timeoutCount);
         return -2;//emissor vai retransmitir (escrever) a trama
       }
     }
@@ -277,7 +277,7 @@ int transmiterWaitingForPacket(int fd, int status) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
               //sleep(1);//AnabelaSilva
-          //timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
+          timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           //a recepcao de rej significa que esta aberta a comunicacao
           if(timeoutCount == linkLayer.numTransmissions) {
             state = STATE_ABORT;
@@ -517,11 +517,6 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
   int result = 0;//INICIAR LCOM
   do {
-  //  int i=0;
-    //for(i = 0; i < packetILength; i++){
-      //printf("Packet :%x\n",packetI[i] );
-    //}
-    printf("Controlo %x\n",packetI[2] );
     if(write(fd, packetI, packetILength) != packetILength) {
     printf("Error writing to the serial port.\n");
     return -1;
