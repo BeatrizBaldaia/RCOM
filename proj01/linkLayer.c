@@ -303,19 +303,22 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
   state = STATE_0;
   unsigned char bytePacket = 0;
   int nRead = 0;
-  unsigned char data[1000];//string com o campo de dados e com o BCC2
+//unsigned char * data = (unsigned char *)malloc(*dataBlockSize * sizeof(unsigned char));
+ unsigned char* data = malloc(0);//string com o campo de dados e com o BCC2
   int dataSize = 0;
+
   while((nRead = read(fd,&bytePacket,1)) > 0) {
     if(nRead != 1) {
       printf("Error reading.\n");
       return NULL;
     }
-    printf("LEU: %X\n", bytePacket);
+    //printf("LEU: %X\n", bytePacket);
     switch (state) {
       case STATE_0:
       inSTATE_0(bytePacket);
       break;
       case STATE_1:
+printf("NO ESTADO 1\n");
       inSTATE_1(bytePacket);
       break;
       case STATE_2:
@@ -336,7 +339,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
         //cabecalho foi lido com sucesso. enviar REJ cajo dados (D1 ... Dn) estejam mal
         state = STATE_4;
         dataSize = 0;
-      } else if((S == 0 && bytePacket == 0x40) || (S == 1 && bytePacket == 0x00)) { //trama e um duplicado; ignorar e enviar um RR_FLAG
+      } else if((S == 0 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x40)) || (S == 1 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x00))) { //trama e um duplicado; ignorar e enviar um RR_FLAG
           if(S) {
             rr[2] = RR_FLAG ^ 0x80;
             rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG ^ 0x80;
@@ -348,17 +351,22 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
           if(write(fd,rr,5) != 5) {
               printf("Error writing to the serial port.\n");
           }
-          return NULL;
+          state = STATE_0;
+          dataSize = 0;
       } else {
         state = STATE_0;
       }
       break;
       case STATE_4:
+printf("NO ESTADO 4\n");
 		    if(bytePacket == FLAG) {//ja leu todos os dados + BCC2
 		      unsigned char * destuffedData = destuffing(data, &dataSize);
+printf("dataSize: %d\n", dataSize);
           int destuffedDataSize = dataSize - 1; //nao consideramos o BCC2
           unsigned char bcc2 = generateBCC(destuffedData, destuffedDataSize);
-
+printf("destuffedDataSize: %X\n", destuffedDataSize);
+printf("BCC2: %X\n", bcc2);
+printf("suposto BCC2: %X\n", destuffedData[destuffedDataSize]);
           if(bcc2 == destuffedData[destuffedDataSize]) {//nao ha erros na trama I
             (*dataBlockSize) = destuffedDataSize;
             return destuffedData;
@@ -369,13 +377,18 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
                printf("Error writing to the serial port.\n");
              }
              state = STATE_0;
+             dataSize = 0;
           }
 
       } else {//vai guardando bytes de dados
+	  printf("merdou?\n");
+	  data = realloc(data,dataSize+1);
           data[dataSize] = bytePacket;
+
           dataSize++;
       }
     }
+printf("---------ESTA NO ESTADO %d\n\n", state);
   }
 	return NULL;
 }
