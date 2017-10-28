@@ -277,7 +277,7 @@ int transmiterWaitingForPacket(int fd, int status) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
               //sleep(1);//AnabelaSilva
-          timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
+          //timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           //a recepcao de rej significa que esta aberta a comunicacao
           if(timeoutCount == linkLayer.numTransmissions) {
             state = STATE_ABORT;
@@ -485,7 +485,7 @@ int llopen(int port, int status) {
 
 
 /**
-    Sends the information. Does the stuffing and prepares frame I to send 
+    Sends the information. Does the stuffing and prepares frame I to send
 
     @param fd port to write
     @param buffer information to write
@@ -544,7 +544,7 @@ int llwrite(int fd, unsigned char * buffer, int length) {
     Reads the information sent by the Transmitter
 
     @param fd port to read
-    @param buffer information read 
+    @param buffer information read
     @return number of bytes read, -1 if couldn't read
 */
 int llread(int fd, unsigned char * buffer) {

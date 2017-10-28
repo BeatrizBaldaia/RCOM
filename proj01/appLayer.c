@@ -54,7 +54,7 @@ int appTransmiter(char* fileName){//
 	int dataPacketSize= nDataBytes + 4;
 	unsigned char* fdDataPacket = realloc(NULL,dataPacketSize);
 	int size = -1;
-	while((size = read(fdFile, &(fdDataPacket[4]), nDataBytes)) < 0){
+	while((size = read(fdFile, &(fdDataPacket[4]), nDataBytes)) > 0){
 		//Enviar fdFile
 		fdDataPacket[0] = 0;//C
 		fdDataPacket[1] = n;//N
@@ -98,13 +98,12 @@ int appReceiver() {
 
 	int i = 0, j = 0;
 	unsigned int* fileSize = NULL;
-	
+
 	char* fileName = malloc(controlPacketSize);
 
 	for(; i < controlPacketSize; i++) {
 		if(controlPacket[i] == 0) { //file size
 			printf("HERE\n");
-			//if(memcpy(fileSize, controlPacket + i + 2, controlPacket[i + 1])==NULL)
 			fileSize = (unsigned int*) (controlPacket + i + 2);
 				printf("THERE\n");
 
