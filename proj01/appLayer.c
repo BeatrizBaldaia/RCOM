@@ -54,7 +54,7 @@ int appTransmiter(char* fileName){//
 	int dataPacketSize= nDataBytes + 4;
 	unsigned char* fdDataPacket = malloc(dataPacketSize);
 	int size = -1;
-	while((size = read(fdFile, &(fdDataPacket[4]), nDataBytes)) < 0){
+	while((size = read(fdFile, &(fdDataPacket[4]), nDataBytes)) > 0){
 		//Enviar fdFile
 		fdDataPacket[0] = 0;//C
 		fdDataPacket[1] = n;//N
