@@ -98,16 +98,21 @@ int appReceiver() {
 
 	int i = 0, j = 0;
 	unsigned int* fileSize = NULL;
+	
 	char* fileName = malloc(controlPacketSize);
 
 	for(; i < controlPacketSize; i++) {
 		if(controlPacket[i] == 0) { //file size
-			memcpy(fileSize, controlPacket + i + 2, controlPacket[i + 1]);
+			printf("HERE\n");
+			//if(memcpy(fileSize, controlPacket + i + 2, controlPacket[i + 1])==NULL)
+			fileSize = (unsigned int*) (controlPacket + i + 2);
+				printf("THERE\n");
+
 			i += 1 + controlPacket[i + 1];
 		} else if(controlPacket[i] == 1) { //file size
 			int fileNameSize = controlPacket[i + 1];
 			i += 2;
-			for (; j < fileNameSize; j++) {
+			for (; j < fileNameSize; j++, i++) {
 				fileName[j] = controlPacket[i];
 			}
 		}
@@ -122,13 +127,19 @@ int appReceiver() {
 	}
 
 	unsigned char* dataPacket = NULL;
+printf("WOAGGGGGG\n");
+	printf("WOAGGGGGG %u\n", *fileSize);
 	dataPacket = realloc(dataPacket, *fileSize);
+printf("WOAGGGGGG\n");
 
 	while((size = llread(fd, dataPacket)) > 0) {//NOT FINAL
+		printf("AQUI\n");
+printf("%X\n", dataPacket[0]);
 		if((dataPacket[0] == 0) && (dataPacket[1] == n)) {
 			n = (n + 1) % 256;
 			int sizeWrite = 4;
 			int stillNeedToWrite = (size - sizeWrite);
+			printf("%X\n", *dataPacket);
 			while((stillNeedToWrite = (size - sizeWrite)) > 0) {
 				sizeWrite += write(fdFile, dataPacket + sizeWrite, stillNeedToWrite);
 		  }

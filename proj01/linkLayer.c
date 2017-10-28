@@ -276,7 +276,7 @@ int transmiterWaitingForPacket(int fd, int status) {
         } else if(result == -2) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
-              sleep(1);//AnabelaSilva
+              //sleep(1);//AnabelaSilva
           timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           //a recepcao de rej significa que esta aberta a comunicacao
           if(timeoutCount == linkLayer.numTransmissions) {
@@ -291,6 +291,14 @@ int transmiterWaitingForPacket(int fd, int status) {
   }
 }
 
+
+/**
+    Waits for a frame/packet of Information.
+
+    @param fd port to read
+    @param dataBlockSize returns the size of the packet read
+    @return data read on success, NULL otherwise
+*/
 unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
   state = STATE_0;
   unsigned char bytePacket = 0;
@@ -370,6 +378,13 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
 	return NULL;
 }
 
+
+/**
+    Receiver waits for DISC
+
+    @param fd port to open
+    @return 0 on success, -1 otherwise
+*/
 int receiverWaitingForDISC(int fd) {
   state=STATE_0;
   unsigned char bytePacket = 0;//Iniciar com valor, LCOM
@@ -378,6 +393,7 @@ int receiverWaitingForDISC(int fd) {
       printf("Error reading.\n");
       return -1;
     }
+    int retransmit = 0;//a variavel aqui nao tem valor pratico nenhum
 
     switch (state) {
       case STATE_0:{
@@ -385,25 +401,32 @@ int receiverWaitingForDISC(int fd) {
         break;
       }case STATE_1:{
         inSTATE_1(bytePacket);
-      break;
+        break;
       }case STATE_2:{
         inSTATE_2(bytePacket, task);
-      break;
+        break;
       }case STATE_3:{
-      int retransmit = 0;//a variavel aqui nao tem valor pratico nenhum
         inSTATE_3(bytePacket, task, &retransmit);
-      break;
+        break;
       }case STATE_4:{
-        int retransmit = 0;
         int result = inSTATE_4(bytePacket, &retransmit);
         if(result == 0) {
           return 0;
         }
-      break;
-    }}
+       break;
+      }
+    }
   }
 }
 
+
+/**
+    Opens the port of communication between Transmitter and Receiver
+
+    @param fd port to open
+    @param status receiver or transmitter
+    @return number of bytes write, -1 if couldn't write
+*/
 int llopen(int port, int status) {
   linkLayer.baudRate = BAUDRATE;
   linkLayer.timeout = 3;
@@ -416,7 +439,7 @@ int llopen(int port, int status) {
     printf("Invalid port\n");
     return -1;
   }
-  int fd = open(linkLayer.port, O_RDWR | O_NOCTTY );
+  int fd = open(linkLayer.port, O_RDWR | O_NOCTTY );  //Opens the port
   if(fd < 0) {
     printf("Fail opening %s\n", linkLayer.port);
     return -1;
@@ -428,11 +451,11 @@ int llopen(int port, int status) {
       setTerminalAttributes(fd);
       int result = 0;
       do{
-       if(write(fd,set,5) != 5) {
+       if(write(fd,set,5) != 5) {		//Sends SET
           printf("Error writing to the serial port.\n");
           return -1;
         }
-        result = transmiterWaitingForPacket(fd, TRANSMITER);
+        result = transmiterWaitingForPacket(fd, TRANSMITER);		//Waits for UA
       } while (result != -1 && result != 0);
       if(result == -1) {
         printf("Coundn't get UA.\n");
@@ -444,11 +467,11 @@ int llopen(int port, int status) {
     case RECEIVER:
       task = RECEIVER;
       setTerminalAttributes(fd);
-      if(receiverWaitingForPacket(fd) == -1) {
+      if(receiverWaitingForPacket(fd) == -1) {		//Waits for SET
         resetTerminalAttributes(fd);
         return -1;
       }//fica em loop infinito ate receber o SET
-      if(write(fd, receiverUA, 5) != 5) {
+      if(write(fd, receiverUA, 5) != 5) {		//Sends UA
         printf("Error writing to the serial port.\n");
         return -1;
       }
@@ -460,12 +483,14 @@ int llopen(int port, int status) {
   return fd;
 }
 
+
 /**
-* Link Layer recebe da aplicação o campo de informacao (D1, ..., Dn),
-* ou seja, o char * buffer, faz o stuffing e prepara a trama I
-* para a enviar.
-*
-* retorna => 0 - sucesso; -1 - erro;
+    Sends the information. Does the stuffing and prepares frame I to send 
+
+    @param fd port to write
+    @param buffer information to write
+    @param length size of buffer
+    @return number of bytes write, -1 if couldn't write
 */
 int llwrite(int fd, unsigned char * buffer, int length) {
   unsigned char BCC2 = generateBCC(buffer, length);
@@ -514,42 +539,57 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   return length;
 }
 
+
+/**
+    Reads the information sent by the Transmitter
+
+    @param fd port to read
+    @param buffer information read 
+    @return number of bytes read, -1 if couldn't read
+*/
 int llread(int fd, unsigned char * buffer) {
   int bufferSize = -1;
   unsigned char * aux = waitingForPacketI(fd, &bufferSize);
   buffer = memcpy(buffer, aux, bufferSize);
   free(aux);
-	if(bufferSize != -1) {
+    if(bufferSize != -1) {
       if(S==0) {
           rr[2] = RR_FLAG ^ 0x80;
           rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG ^ 0x80;
-		  S = 1;
-        } else {
+	  S = 1;
+      } else {
           rr[2] = RR_FLAG;
           rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG;
-		  S = 0;
-        }
-		if(write(fd, rr, 5) != 5) {
-			printf("Couldn't send RR\n");
-		}
-	}
+	  S = 0;
+      }
+
+      if(write(fd, rr, 5) != 5) {	//Sends RR on success
+	printf("Couldn't send RR\n");
+      }
+    }
 
   return bufferSize;
 }
 
+/**
+    Closes the communication between the transmitter and the receiver
+
+    @param fd port to close
+    @return 0 if succeed, -1 otherwise (need to read the all frame again)
+*/
 int llclose(int fd) {
   int result=0;
   if(task == TRANSMITER) {
     do {
-      if(write(fd, transmiterDISC, 5) != 5) {
+      if(write(fd, transmiterDISC, 5) != 5) {		//Sends DISC to receiver
         printf("Error writing to the serial port.\n");
         return -1;
       }
       printf("\nVai ler Disc\n");
-      result = transmiterWaitingForPacket(fd, task);
+      result = transmiterWaitingForPacket(fd, task);	//Waits for a DISC
     } while(result != -1 && result != 0);
     if(result == 0) {
-      if(write(fd, transmiterUA, 5) != 5) {
+      if(write(fd, transmiterUA, 5) != 5) {		//Sends UA to receiver
         printf("Error writing to the serial port.\n");
         return -1;
       }
@@ -568,18 +608,18 @@ int llclose(int fd) {
 
   }
   else {//RECEIVER
-    if(receiverWaitingForDISC(fd) != 0) {
+    if(receiverWaitingForDISC(fd) != 0) {		//Waits for a DISC
         printf("Error closing the communication!\n");
         resetTerminalAttributes(fd);
         return -1;
       }
 
-    if(write(fd, receiverDISC, 5) != 5) {
+    if(write(fd, receiverDISC, 5) != 5) {		//Sends DISC to transmitter
         printf("Error writing to the serial port.\n");
         return -1;
       }
 
-    if (receiverWaitingForPacket(fd) == -1) {
+    if (receiverWaitingForPacket(fd) == -1) {		//Waits for UA
       resetTerminalAttributes(fd);
       return -1;
     }
