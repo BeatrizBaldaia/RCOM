@@ -270,13 +270,13 @@ int transmiterWaitingForPacket(int fd, int status) {
       case STATE_4:{
         int result = inSTATE_4(bytePacket, &retransmit);
         if(result == 0) {
+          printf("Received an answer with success.\n");
           timeoutCount = 0;
           alarm(0);//"If seconds is 0, a pending alarm request, if any, is canceled."
           return result;
         } else if(result == -2) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
-              //sleep(1);//AnabelaSilva
           timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           //a recepcao de rej significa que esta aberta a comunicacao
           if(timeoutCount == linkLayer.numTransmissions) {
@@ -303,22 +303,19 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
   state = STATE_0;
   unsigned char bytePacket = 0;
   int nRead = 0;
-//unsigned char * data = (unsigned char *)malloc(*dataBlockSize * sizeof(unsigned char));
- unsigned char* data = malloc(0);//string com o campo de dados e com o BCC2
+  unsigned char* data = malloc(0);//string com o campo de dados e com o BCC2
   int dataSize = 0;
 
-  while((nRead = read(fd,&bytePacket,1)) > 0) {
+  while((nRead = read(fd, &bytePacket, 1)) > 0) {
     if(nRead != 1) {
       printf("Error reading.\n");
       return NULL;
     }
-    //printf("LEU: %X\n", bytePacket);
     switch (state) {
       case STATE_0:
       inSTATE_0(bytePacket);
       break;
       case STATE_1:
-printf("NO ESTADO 1\n");
       inSTATE_1(bytePacket);
       break;
       case STATE_2:
@@ -347,7 +344,7 @@ printf("NO ESTADO 1\n");
             rr[2] = RR_FLAG;
             rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG;
           }
-          printf("Leu duplicado\n");
+          printf("Read duplicate\n");
           if(write(fd,rr,5) != 5) {
               printf("Error writing to the serial port.\n");
           }
@@ -358,21 +355,18 @@ printf("NO ESTADO 1\n");
       }
       break;
       case STATE_4:
-printf("NO ESTADO 4\n");
 		    if(bytePacket == FLAG) {//ja leu todos os dados + BCC2
 		      unsigned char * destuffedData = destuffing(data, &dataSize);
-printf("dataSize: %d\n", dataSize);
           int destuffedDataSize = dataSize - 1; //nao consideramos o BCC2
           unsigned char bcc2 = generateBCC(destuffedData, destuffedDataSize);
-printf("destuffedDataSize: %X\n", destuffedDataSize);
-printf("BCC2: %X\n", bcc2);
-printf("suposto BCC2: %X\n", destuffedData[destuffedDataSize]);
+
           if(bcc2 == destuffedData[destuffedDataSize]) {//nao ha erros na trama I
             (*dataBlockSize) = destuffedDataSize;
+            printf("Leaving STATE 4 successfully. Data Packet of size %d\n", (*dataBlockSize));
             return destuffedData;
           } else {//cabecalho certo, mas dados errados; reenviar trama I
              free(destuffedData);
-             printf("BCC errado\n");
+             printf("Wrong BCC2\n");
   			     if(write(fd, rej, 5) != 5) {
                printf("Error writing to the serial port.\n");
              }
@@ -381,14 +375,12 @@ printf("suposto BCC2: %X\n", destuffedData[destuffedDataSize]);
           }
 
       } else {//vai guardando bytes de dados
-	  printf("merdou?\n");
-	  data = realloc(data,dataSize+1);
+	        data = realloc(data,dataSize+1);
           data[dataSize] = bytePacket;
 
           dataSize++;
       }
     }
-printf("---------ESTA NO ESTADO %d\n\n", state);
   }
 	return NULL;
 }
@@ -445,7 +437,7 @@ int receiverWaitingForDISC(int fd) {
 int llopen(int port, int status) {
   linkLayer.baudRate = BAUDRATE;
   linkLayer.timeout = 3;
-  linkLayer.numTransmissions = 3;
+  linkLayer.numTransmissions = 5;
   if(port == 0) {
     strcpy(linkLayer.port, PORT_0);
   } else if(port == 1) {
@@ -528,11 +520,11 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   packetI[3] = packetI[1] ^ packetI[2];//BCC1
   memcpy(packetI + 4, stuffedBuffer, stuffedBufferSize);//campo de informacao (D1 ... Dn)
   memcpy(packetI + stuffedBufferSize + 4, stuffedBCC2, stuffedBCC2Size); //BCC2
-  free(stuffedBCC2);//AnabelaSilva
+  free(stuffedBCC2);
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
   int result = 0;
   do {
-    printf("vai escrever mensagem\n");
+    printf("Writing...\n");
     if(write(fd, packetI, packetILength) != packetILength) {
     printf("Error writing to the serial port.\n");
     return -1;
@@ -546,7 +538,7 @@ int llwrite(int fd, unsigned char * buffer, int length) {
     close(fd);
     return -1;
   }
-  free (packetI);//AnabelaSilva ealteracao
+  free (packetI);
   return length;
 }
 
@@ -575,7 +567,7 @@ int llread(int fd, unsigned char * buffer) {
       }
 
       if(write(fd, rr, 5) != 5) {	//Sends RR on success
-	printf("Couldn't send RR\n");
+	       printf("Couldn't send RR\n");
       }
     }
 
@@ -604,7 +596,6 @@ int llclose(int fd) {
         printf("Error writing to the serial port.\n");
         return -1;
       }
-      printf("Close successed!\n");
       sleep(1);
       printf("Close successed!\n");
       resetTerminalAttributes(fd);

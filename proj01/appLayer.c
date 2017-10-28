@@ -126,14 +126,10 @@ int appReceiver() {
 	}
 
 	unsigned char* dataPacket = NULL;
-printf("WOAGGGGGG\n");
-	printf("WOAGGGGGG %u\n", *fileSize);
 	dataPacket = realloc(dataPacket, *fileSize);
-printf("WOAGGGGGG\n");
 
 	while((size = llread(fd, dataPacket)) > 0) {//NOT FINAL
-		printf("AQUI\n");
-printf("%X\n", dataPacket[0]);
+
 		if((dataPacket[0] == 0) && (dataPacket[1] == n)) {
 			n = (n + 1) % 256;
 			int sizeWrite = 4;
