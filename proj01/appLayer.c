@@ -10,7 +10,7 @@
 #include "linkLayer.h"
 
 int appTransmiter(char* fileName){//
-	printf("%s\n %d\n",fileName,strlen(fileName));
+	printf("%s\n %d\n",fileName, strlen(fileName));
 	int fdFile = open(fileName,O_RDONLY);
 	if(fdFile == -1) {
 		printf("Can't open the file.\n");
@@ -41,7 +41,7 @@ int appTransmiter(char* fileName){//
 	*fileSizeOnArray = fileSize;
 	controlPacket[3 + sizeof(fileSize)] = 1; //T: 1 = nome do ficheiro
 	controlPacket[4 + sizeof(fileSize)] = strlen(fileName); //L
-	strcpy(&controlPacket[5 + sizeof(fileSize)], fileName);
+	memcpy(&controlPacket[5 + sizeof(fileSize)], fileName, strlen(fileName));
 
 
 	if(llwrite(fd, controlPacket, controlPacketSize) <= 0){
@@ -88,7 +88,7 @@ int appReceiver() {
 	unsigned char* controlPacket = NULL;
 	controlPacket = realloc(controlPacket, 1000);
 	int size = 0;
-	 n = 0;
+	unsigned char n = 0;
 	int controlPacketSize = llread(fd, controlPacket); //Leu pacote de controle
 
 	if(controlPacketSize <= 0) {
@@ -102,7 +102,7 @@ int appReceiver() {
 
 	for(; i < controlPacketSize; i++) {
 		if(controlPacket[i] == 0) { //file size
-			memcpy(fileSize, controlPacket[i + 2], controlPacket[i + 1]);
+			memcpy(fileSize, controlPacket + i + 2, controlPacket[i + 1]);
 			i += 1 + controlPacket[i + 1];
 		} else if(controlPacket[i] == 1) { //file size
 			int fileNameSize = controlPacket[i + 1];
@@ -128,9 +128,9 @@ int appReceiver() {
 		if((dataPacket[0] == 0) && (dataPacket[1] == n)) {
 			n = (n + 1) % 256;
 			int sizeWrite = 4;
-			int writeToFile = (size - sizeWrite);
-			while((writeToFile = (size - sizeWrite)) > 0) {
-				sizeWrite += write(fdFile, fdDataPacket + sizeWrite, stillNeedToWrite);
+			int stillNeedToWrite = (size - sizeWrite);
+			while((stillNeedToWrite = (size - sizeWrite)) > 0) {
+				sizeWrite += write(fdFile, dataPacket + sizeWrite, stillNeedToWrite);
 		  }
 		} else break;
 	}
