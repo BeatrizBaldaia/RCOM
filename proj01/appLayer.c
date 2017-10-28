@@ -52,9 +52,9 @@ int appTransmiter(char* fileName){//
 	unsigned char n = 0;
 	int nDataBytes = 256;
 	int dataPacketSize= nDataBytes + 4;
-	unsigned char* fdDataPacket = realloc(NULL,dataPacketSize);
+	unsigned char* fdDataPacket = malloc(dataPacketSize);
 	int size = -1;
-	while((size = read(fdFile, &(fdDataPacket[4]), nDataBytes)) < 0){
+	while((size = read(fdFile, &(fdDataPacket[4]), nDataBytes)) > 0){
 		//Enviar fdFile
 		fdDataPacket[0] = 0;//C
 		fdDataPacket[1] = n;//N
