@@ -32,6 +32,7 @@ int task;
 */
 void alarm_handler(int sig) {
   timeoutCount++;
+  printf("TIMEOUT %d---------\n", timeoutCount);
   if(timeoutCount == linkLayer.numTransmissions) {
     state = STATE_ABORT;
     timeoutCount = 0;
@@ -246,7 +247,7 @@ int transmiterWaitingForPacket(int fd, int status) {
       return -1;
     } else if(state == STATE_RETRY) {
       if(status != RECEIVER) {
-        printf("TIMEOUT %d\n\n", timeoutCount + 1);
+        printf("TIMEOUT %d\n\n", timeoutCount);
         return -2;//emissor vai retransmitir (escrever) a trama
       }
     }
@@ -276,9 +277,7 @@ int transmiterWaitingForPacket(int fd, int status) {
         } else if(result == -2) {
           printf("REJ- Transmiter needs to retransmit.\n");
           alarm(0);
-              //sleep(1);//AnabelaSilva
-          timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
-          //a recepcao de rej significa que esta aberta a comunicacao
+          //timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           if(timeoutCount == linkLayer.numTransmissions) {
             state = STATE_ABORT;
             timeoutCount = 0;
@@ -485,7 +484,7 @@ int llopen(int port, int status) {
 
 
 /**
-    Sends the information. Does the stuffing and prepares frame I to send 
+    Sends the information. Does the stuffing and prepares frame I to send
 
     @param fd port to write
     @param buffer information to write
@@ -517,17 +516,12 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
   int result = 0;//INICIAR LCOM
   do {
-  //  int i=0;
-    //for(i = 0; i < packetILength; i++){
-      //printf("Packet :%x\n",packetI[i] );
-    //}
-    printf("Controlo %x\n",packetI[2] );
-    if(write(fd, packetI, packetILength) != packetILength) {
-    printf("Error writing to the serial port.\n");
-    return -1;
-    }
-    int typeOfAnswer = S ? TRANSMITER_RR_1 : TRANSMITER_RR_0;
-    result = transmiterWaitingForPacket(fd, typeOfAnswer);
+      if(write(fd, packetI, packetILength) != packetILength) {
+      printf("Error writing to the serial port.\n");
+      return -1;
+      }
+      int typeOfAnswer = S ? TRANSMITER_RR_1 : TRANSMITER_RR_0;
+      result = transmiterWaitingForPacket(fd, typeOfAnswer);
   } while(result != -1 && result != 0);
   if(result == -1) {
     printf("Coundn't get RR.\n");
@@ -544,7 +538,7 @@ int llwrite(int fd, unsigned char * buffer, int length) {
     Reads the information sent by the Transmitter
 
     @param fd port to read
-    @param buffer information read 
+    @param buffer information read
     @return number of bytes read, -1 if couldn't read
 */
 int llread(int fd, unsigned char * buffer) {
