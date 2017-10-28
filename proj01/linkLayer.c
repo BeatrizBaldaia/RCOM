@@ -310,6 +310,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
       printf("Error reading.\n");
       return NULL;
     }
+    printf("LEU: %X\n", bytePacket);
     switch (state) {
       case STATE_0:
       inSTATE_0(bytePacket);
@@ -343,6 +344,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
             rr[2] = RR_FLAG;
             rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG;
           }
+          printf("Leu duplicado\n");
           if(write(fd,rr,5) != 5) {
               printf("Error writing to the serial port.\n");
           }
@@ -386,7 +388,7 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
     @return 0 on success, -1 otherwise
 */
 int receiverWaitingForDISC(int fd) {
-  state=STATE_0;
+  state = STATE_0;
   unsigned char bytePacket = 0;//Iniciar com valor, LCOM
   while(1) {
     if(read(fd,&bytePacket,1) != 1) {
@@ -515,8 +517,9 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   memcpy(packetI + stuffedBufferSize + 4, stuffedBCC2, stuffedBCC2Size); //BCC2
   free(stuffedBCC2);//AnabelaSilva
   packetI[4 + stuffedBufferSize + stuffedBCC2Size] = FLAG;//F
-  int result = 0;//INICIAR LCOM
+  int result = 0;
   do {
+    printf("vai escrever mensagem\n");
     if(write(fd, packetI, packetILength) != packetILength) {
     printf("Error writing to the serial port.\n");
     return -1;
