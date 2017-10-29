@@ -1,10 +1,10 @@
 #define BAUDRATE B38400
 #define PORT_0 "/dev/ttyS0"
 #define PORT_1 "/dev/ttyS1"
-#define TRANSMITER 0
+#define TRANSMITTER 0
 #define RECEIVER 1
-#define TRANSMITER_RR_0 2
-#define TRANSMITER_RR_1 3
+#define TRANSMITTER_RR_0 2
+#define TRANSMITTER_RR_1 3
 #define MAX_SIZE 100
 
 #define FALSE 0
@@ -14,7 +14,7 @@
 #define ESCAPE 0x7D
 #define BYTE_STUFFING 0x20
 
-#define TRANSMITER_SEND_ADDR 0x03 /* Comandos (trama I, SET e DISC) enviados pelo Emissor e Respostas (tramas UA, RR e REJ) enviadas pelo Recetor*/
+#define TRANSMITTER_SEND_ADDR 0x03 /* Comandos (trama I, SET e DISC) enviados pelo Emissor e Respostas (tramas UA, RR e REJ) enviadas pelo Recetor*/
 #define RECEIVER_SEND_ADDR 0x01 /* Comandos enviados pelo Recetor e Respostas enviadas pelo Emissor */
 
 #define SET 0x03

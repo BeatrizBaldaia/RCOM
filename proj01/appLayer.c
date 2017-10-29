@@ -9,14 +9,17 @@
 #include "utils.h"
 #include "linkLayer.h"
 
-int appTransmiter(char* fileName){//
+int appTransmitter(char* fileName, unsigned int timeout, unsigned int numTransmissions, int bytesPerFrame){//
 	printf("%s\n %d\n",fileName, strlen(fileName));
 	int fdFile = open(fileName,O_RDONLY);
 	if(fdFile == -1) {
 		printf("Can't open the file.\n");
 		return -1;
 	}
-	int fd = llopen(0, TRANSMITER);
+
+	initProtocol(timeout, numTransmissions);
+
+	int fd = llopen(0, TRANSMITTER);
 	if(fd == -1) {
 		printf("Can't open the serial port.\n");
 		return -1;
@@ -50,7 +53,7 @@ int appTransmiter(char* fileName){//
 	}
 
 	unsigned char n = 0;
-	int nDataBytes = 256;
+	int nDataBytes = bytesPerFrame;
 	int dataPacketSize= nDataBytes + 4;
 	unsigned char* fdDataPacket = realloc(NULL,dataPacketSize);
 	int size = -1;
@@ -79,6 +82,7 @@ int appTransmiter(char* fileName){//
 	return 0;
 }
 int appReceiver() {
+	initProtocol(3, 3);
 	int fd = llopen(0, RECEIVER);
 	if(fd == -1){
 		printf("Couldn't open the serial port.\n");
@@ -103,9 +107,7 @@ int appReceiver() {
 
 	for(; i < controlPacketSize; i++) {
 		if(controlPacket[i] == 0) { //file size
-			printf("HERE\n");
 			fileSize = (unsigned int*) (controlPacket + i + 2);
-				printf("THERE\n");
 
 			i += 1 + controlPacket[i + 1];
 		} else if(controlPacket[i] == 1) { //file size
@@ -134,7 +136,6 @@ int appReceiver() {
 			n = (n + 1) % 256;
 			int sizeWrite = 4;
 			int stillNeedToWrite = (size - sizeWrite);
-			printf("%X\n", *dataPacket);
 			while((stillNeedToWrite = (size - sizeWrite)) > 0) {
 				sizeWrite += write(fdFile, dataPacket + sizeWrite, stillNeedToWrite);
 		  }
@@ -146,11 +147,43 @@ int appReceiver() {
 }
 
 int main(int argc, char** argv){//ENVIAR
-
-	if(argc == 2){
-		return appTransmiter(argv[1]);
-	}
-	if(argc == 1){
+/*
+1 - ./app
+2 - file name
+3 - timeout
+4 - number of transmissions
+5 - number of bytes per frame
+*/
+	unsigned int timeout = 0;
+	unsigned int nTransmissions = 0;
+	int bytesPerFrame = 0;
+	if(argc == 5) {
+		timeout = (unsigned int)atoi(argv[2]);
+		nTransmissions = (unsigned int)atoi(argv[3]);
+		bytesPerFrame = atoi(argv[4]);
+		if(timeout > 500 || timeout < 1 || nTransmissions > 10 || nTransmissions < 1 || bytesPerFrame > 50000 || bytesPerFrame < 10) {
+			printf("Invalid values.\n");
+			return -1;
+		}
+		return appTransmitter(argv[1], timeout, nTransmissions, bytesPerFrame);
+	} else if(argc == 4) {
+		timeout = (unsigned int)atoi(argv[2]);
+		nTransmissions = (unsigned int)atoi(argv[3]);
+		if(timeout > 500 || timeout < 1 || nTransmissions > 10 || nTransmissions < 1 ) {
+			printf("Invalid values.\n");
+			return -1;
+		}
+		return appTransmitter(argv[1], timeout, nTransmissions, 256);
+	} else if(argc == 3) {
+		timeout = (unsigned int)atoi(argv[2]);
+		if(timeout > 500 || timeout < 1) {
+			printf("Invalid values.\n");
+			return -1;
+		}
+		return appTransmitter(argv[1], timeout, 3, 256);
+	} else if(argc == 2) {
+		return appTransmitter(argv[1], 3, 3, 256);
+	} else if(argc == 1){
 		return appReceiver();
 	}
 	return -1;

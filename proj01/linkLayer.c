@@ -12,12 +12,12 @@
 #include "linkLayer.h"
 
 struct linkLayer linkLayer;
-unsigned char set[5] = {FLAG, TRANSMITER_SEND_ADDR, SET, TRANSMITER_SEND_ADDR ^ SET, FLAG};
-unsigned char receiverUA[5] = {FLAG, TRANSMITER_SEND_ADDR, UA, TRANSMITER_SEND_ADDR ^ UA, FLAG};
-unsigned char transmiterUA[5] = {FLAG, RECEIVER_SEND_ADDR, UA, RECEIVER_SEND_ADDR ^ UA, FLAG};
-unsigned char rr[5] = {FLAG, TRANSMITER_SEND_ADDR, RR_FLAG, TRANSMITER_SEND_ADDR ^ RR_FLAG, FLAG};
-unsigned char rej[5] = {FLAG, TRANSMITER_SEND_ADDR, REJ, TRANSMITER_SEND_ADDR ^ REJ, FLAG};
-unsigned char transmiterDISC[5] = {FLAG, TRANSMITER_SEND_ADDR, DISC, TRANSMITER_SEND_ADDR ^ DISC, FLAG};
+unsigned char set[5] = {FLAG, TRANSMITTER_SEND_ADDR, SET, TRANSMITTER_SEND_ADDR ^ SET, FLAG};
+unsigned char receiverUA[5] = {FLAG, TRANSMITTER_SEND_ADDR, UA, TRANSMITTER_SEND_ADDR ^ UA, FLAG};
+unsigned char transmitterUA[5] = {FLAG, RECEIVER_SEND_ADDR, UA, RECEIVER_SEND_ADDR ^ UA, FLAG};
+unsigned char rr[5] = {FLAG, TRANSMITTER_SEND_ADDR, RR_FLAG, TRANSMITTER_SEND_ADDR ^ RR_FLAG, FLAG};
+unsigned char rej[5] = {FLAG, TRANSMITTER_SEND_ADDR, REJ, TRANSMITTER_SEND_ADDR ^ REJ, FLAG};
+unsigned char transmitterDISC[5] = {FLAG, TRANSMITTER_SEND_ADDR, DISC, TRANSMITTER_SEND_ADDR ^ DISC, FLAG};
 unsigned char receiverDISC[5] = {FLAG, RECEIVER_SEND_ADDR, DISC, RECEIVER_SEND_ADDR ^ DISC, FLAG};
 
 struct termios oldtio,newtio;
@@ -62,7 +62,7 @@ void inSTATE_0 (unsigned char bytePacket) {
 void inSTATE_1 (unsigned char bytePacket) {
   if(bytePacket == FLAG) {
     state = STATE_1;
-  } else if(bytePacket == TRANSMITER_SEND_ADDR || bytePacket == RECEIVER_SEND_ADDR) {
+  } else if(bytePacket == TRANSMITTER_SEND_ADDR || bytePacket == RECEIVER_SEND_ADDR) {
     state = STATE_2;
   } else {
     state = STATE_0;
@@ -81,15 +81,15 @@ void inSTATE_1 (unsigned char bytePacket) {
 void inSTATE_2 (unsigned char bytePacket, int status) {
   if(bytePacket == FLAG) {
     state = STATE_1;
-  } else if(status == TRANSMITER && bytePacket == UA) {
+  } else if(status == TRANSMITTER && bytePacket == UA) {
     state = STATE_3;
   } else if(status == RECEIVER && (bytePacket == SET || bytePacket == UA)) {
       state = STATE_3;
-  } else if(status == TRANSMITER_RR_0 && bytePacket == RR_FLAG) {
+  } else if(status == TRANSMITTER_RR_0 && bytePacket == RR_FLAG) {
       state = STATE_3;
-  } else if(status == TRANSMITER_RR_1 && bytePacket == (RR_FLAG ^ 0x80)) {//TODO
+  } else if(status == TRANSMITTER_RR_1 && bytePacket == (RR_FLAG ^ 0x80)) {//TODO
     state = STATE_3;
-  } else if((status == TRANSMITER_RR_0 || status == TRANSMITER_RR_1) && bytePacket == REJ) {
+  } else if((status == TRANSMITTER_RR_0 || status == TRANSMITTER_RR_1) && bytePacket == REJ) {
     state = STATE_3;
   } else if(bytePacket == DISC) {
     state = STATE_3;
@@ -107,23 +107,23 @@ void inSTATE_2 (unsigned char bytePacket, int status) {
 
     @param bytePacket The read byte.
     @param status The user's task.
-    @param retransmit Variable to warn if the transmiter will have to retransmit the I frame
+    @param retransmit Variable to warn if the transmitter will have to retransmit the I frame
 */
 void inSTATE_3 (unsigned char bytePacket, int status, int * retransmit) {
   if(bytePacket == FLAG) {
     state = STATE_1;
-  } else if(status == TRANSMITER && bytePacket == (TRANSMITER_SEND_ADDR ^ UA)) {//emissor esta a receber UA
+  } else if(status == TRANSMITTER && bytePacket == (TRANSMITTER_SEND_ADDR ^ UA)) {//emissor esta a receber UA
     state = STATE_4;
-  } else if(status == RECEIVER && (bytePacket == (TRANSMITER_SEND_ADDR ^ SET) || bytePacket == (RECEIVER_SEND_ADDR ^ UA))) {//recetor esta a receber SET
+  } else if(status == RECEIVER && (bytePacket == (TRANSMITTER_SEND_ADDR ^ SET) || bytePacket == (RECEIVER_SEND_ADDR ^ UA))) {//recetor esta a receber SET
     state = STATE_4;
-  } else if(status == TRANSMITER_RR_0 && bytePacket == (TRANSMITER_SEND_ADDR ^ RR_FLAG)) {//emissor esta a receber RR com seq. number = 0
+  } else if(status == TRANSMITTER_RR_0 && bytePacket == (TRANSMITTER_SEND_ADDR ^ RR_FLAG)) {//emissor esta a receber RR com seq. number = 0
     state = STATE_4;
-  } else if(status == TRANSMITER_RR_1 && bytePacket == (TRANSMITER_SEND_ADDR ^ RR_FLAG ^ 0x80)) {//TODO//emissor esta a receber RR com seq. number = 1
+  } else if(status == TRANSMITTER_RR_1 && bytePacket == (TRANSMITTER_SEND_ADDR ^ RR_FLAG ^ 0x80)) {//TODO//emissor esta a receber RR com seq. number = 1
     state = STATE_4;
-  } else if((status == TRANSMITER_RR_0 || status == TRANSMITER_RR_1) && bytePacket == (TRANSMITER_SEND_ADDR ^ REJ)) {//emissor estava a espera de uma resposta e acaba por receber REJ
+  } else if((status == TRANSMITTER_RR_0 || status == TRANSMITTER_RR_1) && bytePacket == (TRANSMITTER_SEND_ADDR ^ REJ)) {//emissor estava a espera de uma resposta e acaba por receber REJ
     state = STATE_4;
     *retransmit = 1;
-  } else if((status == TRANSMITER && bytePacket == (RECEIVER_SEND_ADDR ^ DISC)) || (status == RECEIVER && bytePacket == (TRANSMITER_SEND_ADDR ^ DISC))) {//pedido para terminar comunicacao
+  } else if((status == TRANSMITTER && bytePacket == (RECEIVER_SEND_ADDR ^ DISC)) || (status == RECEIVER && bytePacket == (TRANSMITTER_SEND_ADDR ^ DISC))) {//pedido para terminar comunicacao
     state = STATE_4;
   } else {
     state = STATE_0;
@@ -137,7 +137,7 @@ void inSTATE_3 (unsigned char bytePacket, int status, int * retransmit) {
 
     @param bytePacket The read byte.
     @param status The user's task.
-    @param retransmit Variable to warn if the transmiter will have to retransmit the I frame
+    @param retransmit Variable to warn if the transmitter will have to retransmit the I frame
     @return 0 if succeed, -1 otherwise (need to read the all frame again)
 */
 int inSTATE_4 (unsigned char bytePacket, int * retransmit) {
@@ -152,6 +152,12 @@ int inSTATE_4 (unsigned char bytePacket, int * retransmit) {
     state = STATE_0;
   }
   return -1;//voltar a ler de inicio
+}
+
+void initProtocol(unsigned int timeout, unsigned int numTransmissions) {
+  linkLayer.baudRate = BAUDRATE;
+  linkLayer.timeout = timeout;
+  linkLayer.numTransmissions = numTransmissions;
 }
 
 int setTerminalAttributes(int fd) {
@@ -170,7 +176,7 @@ int setTerminalAttributes(int fd) {
   newtio.c_lflag = 0;
 
   newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-  newtio.c_cc[VMIN]     = task == TRANSMITER ? 0 : 1;   /* blocking read until 1 chars received */
+  newtio.c_cc[VMIN]     = task == TRANSMITTER ? 0 : 1;   /* blocking read until 1 chars received */
 
   tcflush(fd, TCIOFLUSH);
 
@@ -226,7 +232,14 @@ int receiverWaitingForPacket(int fd) {
   }
 }
 
-int transmiterWaitingForPacket(int fd, int status) {
+/**
+    Transmitter waits for U and S frames
+
+    @param fd port to read
+    @param status User task (TRANSMITTER_RR_0, TRANSMITTER_RR_1 or TRANSMITTER)
+    @return data read on success, NULL otherwise
+*/
+int transmitterWaitingForPacket(int fd, int status) {
   if(state == STATE_ABORT) {
     printf("TIMEOUT exceeded.\n");
     timeoutCount = 0;
@@ -275,7 +288,7 @@ int transmiterWaitingForPacket(int fd, int status) {
           alarm(0);//"If seconds is 0, a pending alarm request, if any, is canceled."
           return result;
         } else if(result == -2) {
-          printf("REJ- Transmiter needs to retransmit.\n");
+          printf("REJ- Transmitter needs to retransmit.\n");
           alarm(0);
           timeoutCount++;//a rececao de REJ conta como um tentativa de envio, por isso timeoutCount++
           //a recepcao de rej significa que esta aberta a comunicacao
@@ -332,17 +345,17 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
       case STATE_3:
 		    if(bytePacket == FLAG) {
         state = STATE_1;
-      } else if ((S == 0 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x00)) || (S == 1 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x40))) {
+      } else if ((S == 0 && bytePacket == (TRANSMITTER_SEND_ADDR ^ 0x00)) || (S == 1 && bytePacket == (TRANSMITTER_SEND_ADDR ^ 0x40))) {
         //cabecalho foi lido com sucesso. enviar REJ cajo dados (D1 ... Dn) estejam mal
         state = STATE_4;
         dataSize = 0;
-      } else if((S == 0 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x40)) || (S == 1 && bytePacket == (TRANSMITER_SEND_ADDR ^ 0x00))) { //trama e um duplicado; ignorar e enviar um RR_FLAG
+      } else if((S == 0 && bytePacket == (TRANSMITTER_SEND_ADDR ^ 0x40)) || (S == 1 && bytePacket == (TRANSMITTER_SEND_ADDR ^ 0x00))) { //trama e um duplicado; ignorar e enviar um RR_FLAG
           if(S) {
             rr[2] = RR_FLAG ^ 0x80;
-            rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG ^ 0x80;
+            rr[3] = TRANSMITTER_SEND_ADDR ^ RR_FLAG ^ 0x80;
           } else {
             rr[2] = RR_FLAG;
-            rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG;
+            rr[3] = TRANSMITTER_SEND_ADDR ^ RR_FLAG;
           }
           printf("Read duplicate\n");
           if(write(fd,rr,5) != 5) {
@@ -435,9 +448,7 @@ int receiverWaitingForDISC(int fd) {
     @return number of bytes write, -1 if couldn't write
 */
 int llopen(int port, int status) {
-  linkLayer.baudRate = BAUDRATE;
-  linkLayer.timeout = 3;
-  linkLayer.numTransmissions = 5;
+
   if(port == 0) {
     strcpy(linkLayer.port, PORT_0);
   } else if(port == 1) {
@@ -453,8 +464,8 @@ int llopen(int port, int status) {
   }
 
   switch (status) {
-    case TRANSMITER:
-      task = TRANSMITER;
+    case TRANSMITTER:
+      task = TRANSMITTER;
       setTerminalAttributes(fd);
       int result = 0;
       do{
@@ -462,7 +473,7 @@ int llopen(int port, int status) {
           printf("Error writing to the serial port.\n");
           return -1;
         }
-        result = transmiterWaitingForPacket(fd, TRANSMITER);		//Waits for UA
+        result = transmitterWaitingForPacket(fd, TRANSMITTER);		//Waits for UA
       } while (result != -1 && result != 0);
       if(result == -1) {
         printf("Coundn't get UA.\n");
@@ -509,7 +520,7 @@ int llwrite(int fd, unsigned char * buffer, int length) {
   unsigned char * packetI = (unsigned char *)malloc(packetILength * sizeof(unsigned char));
 
   packetI[0] = FLAG;//F
-  packetI[1] = TRANSMITER_SEND_ADDR;//A
+  packetI[1] = TRANSMITTER_SEND_ADDR;//A
   if(S == 0) {
     packetI[2] = 0x00;//C
     S = 1;
@@ -529,8 +540,8 @@ int llwrite(int fd, unsigned char * buffer, int length) {
     printf("Error writing to the serial port.\n");
     return -1;
     }
-    int typeOfAnswer = S ? TRANSMITER_RR_1 : TRANSMITER_RR_0;
-    result = transmiterWaitingForPacket(fd, typeOfAnswer);
+    int typeOfAnswer = S ? TRANSMITTER_RR_1 : TRANSMITTER_RR_0;
+    result = transmitterWaitingForPacket(fd, typeOfAnswer);
   } while(result != -1 && result != 0);
   if(result == -1) {
     printf("Coundn't get RR.\n");
@@ -558,11 +569,11 @@ int llread(int fd, unsigned char * buffer) {
     if(bufferSize != -1) {
       if(S==0) {
           rr[2] = RR_FLAG ^ 0x80;
-          rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG ^ 0x80;
+          rr[3] = TRANSMITTER_SEND_ADDR ^ RR_FLAG ^ 0x80;
 	  S = 1;
       } else {
           rr[2] = RR_FLAG;
-          rr[3] = TRANSMITER_SEND_ADDR ^ RR_FLAG;
+          rr[3] = TRANSMITTER_SEND_ADDR ^ RR_FLAG;
 	  S = 0;
       }
 
@@ -582,20 +593,22 @@ int llread(int fd, unsigned char * buffer) {
 */
 int llclose(int fd) {
   int result=0;
-  if(task == TRANSMITER) {
+  if(task == TRANSMITTER) {
     do {
-      if(write(fd, transmiterDISC, 5) != 5) {		//Sends DISC to receiver
+      printf("Sending DISC\n");
+      if(write(fd, transmitterDISC, 5) != 5) {		//Sends DISC to receiver
         printf("Error writing to the serial port.\n");
         return -1;
       }
-      printf("\nVai ler Disc\n");
-      result = transmiterWaitingForPacket(fd, task);	//Waits for a DISC
+      result = transmitterWaitingForPacket(fd, task);	//Waits for a DISC
     } while(result != -1 && result != 0);
+    printf("Received a DISC from receiver\n");
     if(result == 0) {
-      if(write(fd, transmiterUA, 5) != 5) {		//Sends UA to receiver
+      if(write(fd, transmitterUA, 5) != 5) {		//Sends UA to receiver
         printf("Error writing to the serial port.\n");
         return -1;
       }
+      printf("Sent the UA\n");
       sleep(1);
       printf("Close successed!\n");
       resetTerminalAttributes(fd);
@@ -616,11 +629,13 @@ int llclose(int fd) {
         return -1;
       }
 
+    printf("Received a DISC from transmitter\n");
     if(write(fd, receiverDISC, 5) != 5) {		//Sends DISC to transmitter
         printf("Error writing to the serial port.\n");
         return -1;
       }
-
+    printf("Sent a DISC\n");
+    printf("Close successed!\n");
     if (receiverWaitingForPacket(fd) == -1) {		//Waits for UA
       resetTerminalAttributes(fd);
       return -1;
