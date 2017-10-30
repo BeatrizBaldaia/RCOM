@@ -9,8 +9,20 @@
 #include "utils.h"
 #include "linkLayer.h"
 
+//Eficiencia
+#include <time.h>
+//End eficiencia
+
+
+
 int appTransmitter(char* fileName, unsigned int timeout, unsigned int numTransmissions, int bytesPerFrame){//
-	printf("%s\n %d\n",fileName, strlen(fileName));
+	//printf("%s\n %d\n",fileName, strlen(fileName));
+
+//Eficiencia
+struct timespec initialT, endT;
+//  timespec_get(&initialT,TIME_UTC);
+clock_gettime(CLOCK_MONOTONIC, &initialT);
+//End eficiencia
 	int fdFile = open(fileName,O_RDONLY);
 	if(fdFile == -1) {
 		printf("Can't open the file.\n");
@@ -77,8 +89,15 @@ int appTransmitter(char* fileName, unsigned int timeout, unsigned int numTransmi
 		return -1;
 	}
 
+
+
 	llclose(fd);
   close(fdFile);
+	//Eficiencia
+ clock_gettime(CLOCK_MONOTONIC, &endT);
+		//timespec_get(&endT,TIME_UTC);
+printf("Time of transfer: %f\n", (endT.tv_sec+endT.tv_nsec*10.0E-9) - (initialT.tv_sec+initialT.tv_nsec*10.0E-9));
+	//End eficiencia
 	return 0;
 }
 int appReceiver() {

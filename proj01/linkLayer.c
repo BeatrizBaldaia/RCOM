@@ -372,8 +372,10 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
 		      unsigned char * destuffedData = destuffing(data, &dataSize);
           int destuffedDataSize = dataSize - 1; //nao consideramos o BCC2
           unsigned char bcc2 = generateBCC(destuffedData, destuffedDataSize);
-
-          if(bcc2 == destuffedData[destuffedDataSize]) {//nao ha erros na trama I
+          //Eficiencia
+//          if(bcc2 == destuffedData[destuffedDataSize]) {//nao ha erros na trama I
+            if ((rand() % 100) < (100 - 10) ) {
+          //End eficiencia
             (*dataBlockSize) = destuffedDataSize;
             printf("Leaving STATE 4 successfully. Data Packet of size %d\n", (*dataBlockSize));
             return destuffedData;
