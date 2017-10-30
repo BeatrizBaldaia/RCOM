@@ -119,6 +119,9 @@ gettimeofday(&endT,NULL);
 	return 0;
 }
 int appReceiver() {
+	//eficiencia
+ srand(time(NULL));
+//end eficiencia
 	initProtocol(3, 3);
 	int fd = llopen(0, RECEIVER);
 	if(fd == -1){

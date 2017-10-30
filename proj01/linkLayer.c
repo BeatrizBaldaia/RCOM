@@ -10,6 +10,10 @@
 
 #include "utils.h"
 #include "linkLayer.h"
+//Eficiencia
+#include <time.h>
+//End eficiencia
+
 
 struct linkLayer linkLayer;
 unsigned char set[5] = {FLAG, TRANSMITTER_SEND_ADDR, SET, TRANSMITTER_SEND_ADDR ^ SET, FLAG};
@@ -373,8 +377,8 @@ unsigned char * waitingForPacketI (int fd, int * dataBlockSize) {
           int destuffedDataSize = dataSize - 1; //nao consideramos o BCC2
           unsigned char bcc2 = generateBCC(destuffedData, destuffedDataSize);
           //Eficiencia
-//          if(bcc2 == destuffedData[destuffedDataSize]) {//nao ha erros na trama I
-            if ((rand() % 100) < (100 - 10) ) {
+          if(bcc2 == destuffedData[destuffedDataSize]) {//nao ha erros na trama I
+          //  if ((rand() % 100) < (100 - 5) ) {
           //End eficiencia
             (*dataBlockSize) = destuffedDataSize;
             printf("Leaving STATE 4 successfully. Data Packet of size %d\n", (*dataBlockSize));
@@ -578,7 +582,9 @@ int llread(int fd, unsigned char * buffer) {
           rr[3] = TRANSMITTER_SEND_ADDR ^ RR_FLAG;
 	  S = 0;
       }
-
+//eficiencia
+usleep(1000000 * 0.025);
+//end eficiencia
       if(write(fd, rr, 5) != 5) {	//Sends RR on success
 	       printf("Couldn't send RR\n");
       }
