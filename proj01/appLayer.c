@@ -11,17 +11,31 @@
 
 //Eficiencia
 #include <time.h>
+#include <sys/time.h>
+void timespec_diff(struct timespec *start, struct timespec *stop,
+                   struct timespec *result)
+{
+    if ((stop->tv_nsec - start->tv_nsec) < 0) {
+        result->tv_sec = stop->tv_sec - start->tv_sec - 1;
+        result->tv_nsec = stop->tv_nsec - start->tv_nsec + 1000000000;
+    } else {
+        result->tv_sec = stop->tv_sec - start->tv_sec;
+        result->tv_nsec = stop->tv_nsec - start->tv_nsec;
+    }
+
+    return;
+}
+
 //End eficiencia
-
-
-
 int appTransmitter(char* fileName, unsigned int timeout, unsigned int numTransmissions, int bytesPerFrame){//
 	//printf("%s\n %d\n",fileName, strlen(fileName));
 
 //Eficiencia
-struct timespec initialT, endT;
+//struct timespec initialT, endT, diffT;
+struct timeval initialT, endT, diffT;
 //  timespec_get(&initialT,TIME_UTC);
-clock_gettime(CLOCK_MONOTONIC, &initialT);
+//clock_gettime(CLOCK_REALTIME, &initialT);
+gettimeofday(&initialT,NULL);
 //End eficiencia
 	int fdFile = open(fileName,O_RDONLY);
 	if(fdFile == -1) {
@@ -94,9 +108,13 @@ clock_gettime(CLOCK_MONOTONIC, &initialT);
 	llclose(fd);
   close(fdFile);
 	//Eficiencia
- clock_gettime(CLOCK_MONOTONIC, &endT);
+ //clock_gettime(CLOCK_REALTIME, &endT);
 		//timespec_get(&endT,TIME_UTC);
-printf("Time of transfer: %f\n", (endT.tv_sec+endT.tv_nsec*10.0E-9) - (initialT.tv_sec+initialT.tv_nsec*10.0E-9));
+gettimeofday(&endT,NULL);
+	//	timespec_diff(&initialT, &endT, &diffT);
+	timersub(&endT,&initialT,&diffT);
+		//printf("Time of transfer: %f\n", (endT.tv_sec+endT.tv_nsec*10.0E-9) - (initialT.tv_sec+initialT.tv_nsec*10.0E-9));
+		printf("Time of transfer: %f\n", diffT.tv_sec+diffT.tv_usec*.000001);
 	//End eficiencia
 	return 0;
 }
