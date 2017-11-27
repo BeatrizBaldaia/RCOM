@@ -41,18 +41,18 @@ int parser(ftp_info* info, const char* st){
 
   char * username = NULL;
   if((username = strchr(user, ':'))==NULL)
-    exit(1);  
-  int username_size = (int) (username - user);  
+    exit(1);
+  int username_size = (int) (username - user);
   username = malloc((username_size + 1) * sizeof(char));
   memcpy(username, user, username_size);
   username[username_size] = '\0';
   printf("USERNAME: %s\n", username);
-  
+
   char * password = malloc(strlen(user)-username_size-2);
   memcpy(password, user+username_size+1, strlen(user)-username_size-2);
-  password[strlen(user)-username_size-1] = '\0'; 
+  password[strlen(user)-username_size-1] = '\0';
   printf("PASSWORD: %s\n", password);
-  
+
   if((site   = strchr(st,']')) == NULL)
     exit(1);
   site = malloc(strlen(st)-user_size-7);
@@ -62,18 +62,18 @@ int parser(ftp_info* info, const char* st){
   char * host = NULL;
   if((host = strchr(site,'/')) == NULL)
     exit(1);
-  int host_size = (int) (host - site); 
+  int host_size = (int) (host - site);
   host = malloc((host_size + 1) * sizeof(char));
   memcpy(host, site, host_size);
   host[host_size] = '\0';
   printf("HOST: %s\n",host);
-  
+
   char * url = NULL;
   url = malloc((strlen(site)-host_size+1)* sizeof(char));
   memcpy(url, site+host_size, (strlen(site)-host_size));
   url[(strlen(site)-host_size)] = '\0';
   printf("URL: %s\n",url);
-  
+
   //REFACTOR
   info->username = username;
   info->password = password;
@@ -89,25 +89,26 @@ int main(int argc, char** argv){
   }
   ftp_info info;
   parser(&info, argv[1]);
-  
+
   struct hostent *h;
-  if ((h = gethostbyname(info.host)) == NULL) {  
+  if ((h = gethostbyname(info.host)) == NULL) {
             herror("gethostbyname");
             exit(1);
   }
+  printf("HOST%s\n", info.host);
   int	sockfd;
 	struct	sockaddr_in server_addr;
-	char	buf[] = "Mensagem de teste na travessia da pilha TCP/IP\n";  
+	char	buf[] = "Mensagem de teste na travessia da pilha TCP/IP\n";
 	int	bytes;
-	
-	
+
+
 	//server address handling
 	bzero((char*)&server_addr,sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 
-	server_addr.sin_addr.s_addr = inet_addr(h->h_addr);	//32 bit Internet address network byte ordered
-	server_addr.sin_port = htons(SERVER_PORT);		//server TCP port must be network byte ordered 
-    
+	server_addr.sin_addr.s_addr = inet_addr(inet_ntoa(*((struct in_addr *) h->h_addr)));	//32 bit Internet address network byte ordered
+	server_addr.sin_port = htons(SERVER_PORT);		//server TCP port must be network byte ordered
+
 	//open an TCP socket
 	if ((sockfd = socket(AF_INET,SOCK_STREAM,0)) < 0) {
     		perror("socket()");
@@ -115,8 +116,8 @@ int main(int argc, char** argv){
   }
 	//connect to the server
 		printf("Triyng to cONNECT\n");
-  if(connect(sockfd, 
-	           (struct sockaddr *)&server_addr, 
+  if(connect(sockfd,
+	           (struct sockaddr *)&server_addr,
 		   sizeof(server_addr)) < 0){
     perror("connect()");
 		exit(0);
