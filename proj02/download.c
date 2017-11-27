@@ -125,6 +125,15 @@ int main(int argc, char** argv){
 	printf("CONNECTED, GOING TO WRITE\n");
     	//send a string to the server
 	bytes = write(sockfd, buf, strlen(buf));
+  char * login = malloc(sizeof(char)*(strlen(info.username) + 5));
+  login[0]='u';
+  login[1]='s';
+  login[2]='e';
+  login[3]='r';
+  login[4]=' ';
+  memcpy(login+5,info.username,strlen(info.username));
+  //bytes = write(sockfd, buf, strlen(buf));
+  bytes = write(sockfd, login, strlen(login));
 	printf("Bytes escritos %d\n", bytes);
 
 	close(sockfd);
