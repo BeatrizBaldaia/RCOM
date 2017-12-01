@@ -19,9 +19,23 @@ typedef struct {
   char * url;
 }ftp_info;
 
+int cutString(const char * str, char ch, char * newStr) {
+  int size = strlen((const char *)str);
+  newStr[0] = str[0];
+  int i = 1;
+  for(; i < size; i++) {
+    if(str[i] == ch) {
+      return i + 1;
+    }
+    newStr = realloc(newStr, i + 1);
+    newStr[i] = str[i];
+  }
+  return 0;
+}
+
 int parser(ftp_info* info, const char* st){
-  char* user = NULL;
-  char* site = NULL;
+  int link_size = strlen(st);
+
   char * begin = malloc(7 * sizeof(char));
   memcpy(begin, st, 6);
   begin[6] = '\0';
@@ -31,54 +45,43 @@ int parser(ftp_info* info, const char* st){
     exit(1);
   }
 
-  if((user = strchr(st, ']'))==NULL)
+  link_size -= 6;
+  st += 6;
+  char * user = malloc(1);
+  int user_size = cutString(st, ':', user);
+  if(user_size == 0) {
+    printf("Error on parsing user\n");
     exit(1);
-  int user_size = (int)(user - (st+7));
-  user = malloc((user_size+1) * sizeof(char));
-  memcpy(user, st+7, user_size);
-  user[user_size] = '\0';
-  printf("USER: %s\n",user);
+  }
+  printf("USER: %s\n", user);
+  link_size -= user_size;
+  st += user_size;
 
-  char * username = NULL;
-  if((username = strchr(user, ':'))==NULL)
+  char * password = malloc(1);
+  int password_size = cutString(st, '@', password);
+  if(password_size == 0) {
+    printf("Error on parsing password\n");
     exit(1);
-  int username_size = (int) (username - user);
-  username = malloc((username_size + 1) * sizeof(char));
-  memcpy(username, user, username_size);
-  username[username_size] = '\0';
-  printf("USERNAME: %s\n", username);
-
-  char * password = malloc(strlen(user)-username_size-2);
-  memcpy(password, user+username_size+1, strlen(user)-username_size-2);
-  password[strlen(user)-username_size-1] = '\0';
+  }
   printf("PASSWORD: %s\n", password);
+  link_size -= password_size;
+  st += password_size;
 
-  if((site   = strchr(st,']')) == NULL)
+  char * host = malloc(1);
+  int host_size = cutString(st, '/', host);
+  if(password_size == 0) {
+    printf("Error on parsing host\n");
     exit(1);
-  site = malloc(strlen(st)-user_size-7);
-  memcpy(site, st+8+user_size, strlen(st)-user_size-7);
-  printf("URL: %s\n",site);
+  }
+  printf("HOST: %s\n", host);
+  link_size -= host_size;
+  st += host_size;
 
-  char * host = NULL;
-  if((host = strchr(site,'/')) == NULL)
-    exit(1);
-  int host_size = (int) (host - site);
-  host = malloc((host_size + 1) * sizeof(char));
-  memcpy(host, site, host_size);
-  host[host_size] = '\0';
-  printf("HOST: %s\n",host);
-
-  char * url = NULL;
-  url = malloc((strlen(site)-host_size+1)* sizeof(char));
-  memcpy(url, site+host_size, (strlen(site)-host_size));
-  url[(strlen(site)-host_size)] = '\0';
-  printf("URL: %s\n",url);
-
-  //REFACTOR
-  info->username = username;
-  info->password = password;
-  info->host = host;
-  info->url = url;
+  char * url  = malloc((link_size + 1) * sizeof(char));
+  memcpy(url, st, link_size);
+  url[link_size + 1] = '\0';
+  printf("URL: %s\n", url);
+  
   return 0;
 }
 
