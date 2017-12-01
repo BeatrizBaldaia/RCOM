@@ -9,15 +9,20 @@
 #include <signal.h>
 #include <netdb.h>
 #include <strings.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <termios.h>
 
 #define SERVER_PORT 21
 
 typedef struct {
-  char * username;
+  char * user;
   char * password;
   char * host;
   char * url;
 }ftp_info;
+
+struct termios oldtio,newtio;
 
 int cutString(const char * str, char ch, char * newStr) {
   int size = strlen((const char *)str);
@@ -33,7 +38,40 @@ int cutString(const char * str, char ch, char * newStr) {
   return 0;
 }
 
-int parser(ftp_info* info, const char* st){
+int setTerminalAttributes(int fd) {
+  if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
+    printf("Erro getting the parameters associated with the terminal\n");
+    close(fd);
+    return -1;
+  }
+
+  bzero(&newtio, sizeof(newtio));
+
+  /* set input mode (non-canonical, no echo,...) */
+  newtio.c_lflag = 0;
+
+  newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
+  newtio.c_cc[VMIN]     = 0;   /* blocking read until 1 chars received */
+
+  tcflush(fd, TCIOFLUSH);
+
+  if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
+    printf("Erro setting the parameters associated with the terminal\n");
+    close(fd);
+    return -1;
+  }
+  return 0;
+}
+
+int resetTerminalAttributes(int fd) {
+  if (tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+    printf("Erro setting the parameters associated with the terminal\n");
+    return -1;
+  }
+  return 0;
+}
+
+int parser(ftp_info * info, const char* st){
   int link_size = strlen(st);
 
   char * begin = malloc(7 * sizeof(char));
@@ -77,11 +115,16 @@ int parser(ftp_info* info, const char* st){
   link_size -= host_size;
   st += host_size;
 
-  char * url  = malloc((link_size + 1) * sizeof(char));
+  char * url  = malloc(link_size + 1);
   memcpy(url, st, link_size);
   url[link_size + 1] = '\0';
   printf("URL: %s\n", url);
-  
+
+  info->user = user;
+  info->password = password;
+  info->host = host;
+  info->url = url;
+
   return 0;
 }
 
@@ -98,47 +141,133 @@ int main(int argc, char** argv){
             herror("gethostbyname");
             exit(1);
   }
-  printf("HOST%s\n", info.host);
-  int	sockfd;
+  printf("fez gethostbyname\n");
+  int	socket_fd;
 	struct	sockaddr_in server_addr;
-	char	buf[] = "Mensagem de teste na travessia da pilha TCP/IP\n";
-	int	bytes;
+	char * dump = malloc(1000);
+  char * dump_init_ptr = dump;
 
 
 	//server address handling
 	bzero((char*)&server_addr,sizeof(server_addr));
+  printf("Fez bzero\n");
 	server_addr.sin_family = AF_INET;
 
 	server_addr.sin_addr.s_addr = inet_addr(inet_ntoa(*((struct in_addr *) h->h_addr)));	//32 bit Internet address network byte ordered
 	server_addr.sin_port = htons(SERVER_PORT);		//server TCP port must be network byte ordered
 
 	//open an TCP socket
-	if ((sockfd = socket(AF_INET,SOCK_STREAM,0)) < 0) {
+	if ((socket_fd = socket(AF_INET,SOCK_STREAM | SOCK_NONBLOCK,0)) < 0) {
     		perror("socket()");
         exit(0);
   }
+  printf("Abriu socket\n");
 	//connect to the server
-		printf("Triyng to cONNECT\n");
-  if(connect(sockfd,
+	if(connect(socket_fd,
 	           (struct sockaddr *)&server_addr,
 		   sizeof(server_addr)) < 0){
     perror("connect()");
 		exit(0);
 	}
-	printf("CONNECTED, GOING TO WRITE\n");
-    	//send a string to the server
-	bytes = write(sockfd, buf, strlen(buf));
-  char * login = malloc(sizeof(char)*(strlen(info.username) + 5));
-  login[0]='u';
-  login[1]='s';
-  login[2]='e';
-  login[3]='r';
-  login[4]=' ';
-  memcpy(login+5,info.username,strlen(info.username));
-  //bytes = write(sockfd, buf, strlen(buf));
-  bytes = write(sockfd, login, strlen(login));
-	printf("Bytes escritos %d\n", bytes);
+  printf("Conectou ao socket\n");
 
-	close(sockfd);
+  while(read(socket_fd, dump, 1) > 0) {
+    printf("%c", dump[0]);
+    dump += 1;
+  }
+  printf(":'(\n");
+
+	/*
+  Write user to socket
+  */
+	if(write(socket_fd, "user ", 5) != 5) {
+    printf("Error writing user to socket");
+    exit(1);
+  }
+  printf("1\n");
+
+  if(write(socket_fd, info.user, strlen(info.user)) != strlen(info.user)) {
+    printf("Error writing user to socket");
+    exit(1);
+  }
+  printf("2\n");
+
+  if(write(socket_fd, "\n", 1) != 1) {
+    printf("Error writing user to socket");
+    exit(1);
+  }
+  printf("3\n");
+
+  dump = dump_init_ptr;
+  while(read(socket_fd, dump, 1) > 0) {
+    printf("%c", dump[0]);
+    dump += 1;
+  }
+  /*
+  Write password to socket
+  */
+  if(write(socket_fd, "pass ", 5) != 5) {
+    printf("Error writing password to socket");
+    exit(1);
+  }
+  if(write(socket_fd, info.password, strlen(info.password)) != strlen(info.password)) {
+    printf("Error writing password to socket");
+    exit(1);
+  }
+  if(write(socket_fd, "\n", 1) != 1) {
+    printf("Error writing password to socket");
+    exit(1);
+  }
+  dump = dump_init_ptr;
+  while(read(socket_fd, dump, 1) > 0) {
+    dump += 1;
+  }
+  printf("%s\n", dump_init_ptr);
+  /*
+  Write "pasv" to socket (Entering Passive Mode)
+  */
+  if(write(socket_fd, "pasv\n", 5) != 5) {
+    printf("Error writing pasv to socket");
+    exit(1);
+  }
+  dump = dump_init_ptr;
+  int dump_size = 0;
+  while(read(socket_fd, dump, 1) > 0) {
+    dump_size++;
+    dump += 1;
+  }
+  dump_init_ptr += 27;
+  printf("%s\n", dump_init_ptr);
+  int i = 0;
+  for(; i < 4; i++) {
+    char * aux = malloc(1);
+    int n = cutString((const char *)dump_init_ptr, ',', aux);
+    if(n == 0) {
+      printf("Error!\n");
+      exit(1);
+    }
+    dump_init_ptr += n;
+    free(aux);
+  }
+  /*
+  Read Port
+  */
+  char * first = malloc(1);
+  int first_size = cutString((const char *)dump_init_ptr, ',', first);
+  if(first_size == 0) {
+    printf("Error getting the Port value\n");
+    exit(1);
+  }
+  dump_init_ptr += first_size;
+  char * second = malloc(1);
+  if(cutString((const char *)dump_init_ptr, ')', second) == 0) {
+    printf("Error getting the Port value\n");
+    exit(1);
+  }
+
+  printf("port: %s %s\n", first, second);
+
+  int port = atoi(first) * 256 + atoi(second);
+	close(socket_fd);
 	exit(0);
 }
