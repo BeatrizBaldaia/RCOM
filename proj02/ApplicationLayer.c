@@ -12,7 +12,6 @@ int writeToSocket(ftp_ports* ftp, const char* str, size_t size) {
 }
 
 int readFromSocket(ftp_ports* ftp, char* str, size_t size) {
-	printf("Entrou no read\n");
 	FILE* fd;
   if((fd = fdopen(ftp->command_port, "r")) == NULL) {
     printf("Error tring to open file.\n");
@@ -77,7 +76,7 @@ int login(ftp_ports * ftp, const char * user, const char * password) {
   char buff[1000];
 
   sprintf(buff, "USER %s\n", user);
-	if (writeToSocket(ftp, buff, 1000)) {
+	if (writeToSocket(ftp, buff, strlen(buff))) {
     printf("Couldn't write to socket\n");
     return -1;
   }
@@ -88,8 +87,7 @@ int login(ftp_ports * ftp, const char * user, const char * password) {
   memset(buff, 0, 1000);
 
   sprintf(buff, "PASS %s\n", password);
-
-  if (writeToSocket(ftp, buff, 1000)) {
+  if (writeToSocket(ftp, buff, strlen(buff))) {
     printf("Couldn't write to socket\n");
     return -1;
   }
@@ -105,7 +103,7 @@ int changeRemoteHostDirectory(ftp_ports * ftp, const char * path) {
   char buff[1000];
 
   sprintf(buff, "CWD %s\n", path);
-  if (writeToSocket(ftp, buff, 1000)) {
+  if (writeToSocket(ftp, buff, strlen(buff))) {
     printf("Couldn't write to socket\n");
     return -1;
   }
@@ -121,7 +119,7 @@ int enterPassiveMode(ftp_ports * ftp) {
   char buff[1000];
 
   sprintf(buff, "PASV\n");
-  if (writeToSocket(ftp, buff, 1000)) {
+  if (writeToSocket(ftp, buff, strlen(buff))) {
     printf("Couldn't write to socket\n");
     return -1;
   }
@@ -160,7 +158,7 @@ int startFileTransmission(ftp_ports * ftp, const char * filename) {
   char buff[1000];
 
   sprintf(buff, "RETR %s\n", filename);
-  if (writeToSocket(ftp, buff, 1000)) {
+  if (writeToSocket(ftp, buff, strlen(buff))) {
     printf("Couldn't write to socket\n");
     return -1;
   }
@@ -209,7 +207,7 @@ int disconnectFromServer(ftp_ports * ftp) {
 	}
 
   sprintf(buff, "QUIT\n");
-  if (writeToSocket(ftp, buff, 1000)) {
+  if (writeToSocket(ftp, buff, strlen(buff))) {
     printf("Couldn't write to socket\n");
     return -1;
   }
