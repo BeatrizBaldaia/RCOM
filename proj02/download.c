@@ -162,6 +162,7 @@ int main(int argc, char** argv){
         exit(0);
   }
   printf("Abriu socket\n");
+  setTerminalAttributes(socket_fd);
 	//connect to the server
 	if(connect(socket_fd,
 	           (struct sockaddr *)&server_addr,
