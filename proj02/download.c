@@ -38,38 +38,6 @@ int cutString(const char * str, char ch, char * newStr) {
   return 0;
 }
 
-int setTerminalAttributes(int fd) {
-  if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
-    printf("Erro getting the parameters associated with the terminal\n");
-    close(fd);
-    return -1;
-  }
-
-  bzero(&newtio, sizeof(newtio));
-
-  /* set input mode (non-canonical, no echo,...) */
-  newtio.c_lflag = 0;
-
-  newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-  newtio.c_cc[VMIN]     = 0;   /* blocking read until 1 chars received */
-
-  tcflush(fd, TCIOFLUSH);
-
-  if ( tcsetattr(fd,TCSANOW,&newtio) == -1) {
-    printf("Erro setting the parameters associated with the terminal\n");
-    close(fd);
-    return -1;
-  }
-  return 0;
-}
-
-int resetTerminalAttributes(int fd) {
-  if (tcsetattr(fd,TCSANOW,&oldtio) == -1) {
-    printf("Erro setting the parameters associated with the terminal\n");
-    return -1;
-  }
-  return 0;
-}
 
 int parser(ftp_info * info, const char* st){
   int link_size = strlen(st);
@@ -162,7 +130,6 @@ int main(int argc, char** argv){
         exit(0);
   }
   printf("Abriu socket\n");
-  setTerminalAttributes(socket_fd);
 	//connect to the server
 	if(connect(socket_fd,
 	           (struct sockaddr *)&server_addr,
