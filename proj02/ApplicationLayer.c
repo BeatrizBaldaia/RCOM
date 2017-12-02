@@ -20,16 +20,12 @@ int readFromSocket(ftp_ports* ftp, char* str, size_t size) {
   }
 
 	do {
-		printf("WHILLWE\n");
 		memset(str, 0, size);
-		printf("2\n");
 		str = fgets(str, size, fd);
-		printf("WHART\n");
 		printf("%s", str);
 	} while (!('1' <= str[0] && str[0] <= '5') || str[3] != ' ');
 
 
-	printf("Leu\n");
 	return 0;
 }
 
