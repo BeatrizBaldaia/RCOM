@@ -12,6 +12,7 @@ int writeToSocket(ftp_ports* ftp, const char* str, size_t size) {
 }
 
 int readFromSocket(ftp_ports* ftp, char* str, size_t size) {
+	printf("Entrou no read\n");
 	FILE* fd;
   if((fd = fdopen(ftp->command_port, "r")) == NULL) {
     printf("Error tring to open file.\n");
@@ -19,21 +20,22 @@ int readFromSocket(ftp_ports* ftp, char* str, size_t size) {
   }
 
 	do {
-		memset(str, 0, size);//empty string
-		str = fgets(str, size, fd);//fill string
-    if(str == NULL) {
-      break;
-    }
-    printf("%s", str);
-	} while (1);
+		printf("WHILLWE\n");
+		memset(str, 0, size);
+		printf("2\n");
+		str = fgets(str, size, fd);
+		printf("WHART\n");
+		printf("%s", str);
+	} while (!('1' <= str[0] && str[0] <= '5') || str[3] != ' ');
 
+
+	printf("Leu\n");
 	return 0;
 }
 
 int establishConnection(const char * ip, int port) {
   int socket_fd;
   struct sockaddr_in server_addr;
-  char buff[1000];
 
   // server address handling
 	bzero((char*) &server_addr, sizeof(server_addr));
@@ -42,13 +44,13 @@ int establishConnection(const char * ip, int port) {
 	server_addr.sin_port = htons(port); /*server TCP port must be network byte ordered */
 
 	// open an TCP socket
-	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket()");
 		return -1;
 	}
 
 	// connect to the server
-	if (connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr))
+	if (connect(socket_fd, (struct sockaddr *) &server_addr, sizeof(server_addr))
 			< 0) {
 		perror("connect()");
 		return -1;
@@ -65,6 +67,7 @@ int connectToServer(ftp_ports * ftp, char * ip, int port) {
   }
 
   ftp->command_port = socket_fd;
+	char buff[1000];
 
   if (readFromSocket(ftp, buff, 1000)) {
 		printf("Couldn't read from socket.\n");
@@ -78,26 +81,27 @@ int login(ftp_ports * ftp, const char * user, const char * password) {
   char buff[1000];
 
   sprintf(buff, "USER %s\n", user);
-  if (writeToSocket(ftp, buff, 1000)) {
+	if (writeToSocket(ftp, buff, 1000)) {
     printf("Couldn't write to socket\n");
     return -1;
   }
   if (readFromSocket(ftp, buff, 1000)) {
-		printf("Couldn't read from socket.\n"),
+		printf("Couldn't read from socket.\n");
     return -1;
 	}
   memset(buff, 0, 1000);
 
   sprintf(buff, "PASS %s\n", password);
+
   if (writeToSocket(ftp, buff, 1000)) {
     printf("Couldn't write to socket\n");
     return -1;
   }
+
   if (readFromSocket(ftp, buff, 1000)) {
-		printf("Couldn't read from socket.\n"),
+		printf("Couldn't read from socket.\n");
     return -1;
 	}
-
   return 0;
 }
 
@@ -110,14 +114,14 @@ int changeRemoteHostDirectory(ftp_ports * ftp, const char * path) {
     return -1;
   }
   if (readFromSocket(ftp, buff, 1000)) {
-		printf("Couldn't read from socket.\n"),
+		printf("Couldn't read from socket.\n");
     return -1;
 	}
 
   return 0;
 }
 
-int enterPassiveMode(ftp_ports ftp) {
+int enterPassiveMode(ftp_ports * ftp) {
   char buff[1000];
 
   sprintf(buff, "PASV\n");
@@ -126,14 +130,14 @@ int enterPassiveMode(ftp_ports ftp) {
     return -1;
   }
   if (readFromSocket(ftp, buff, 1000)) {
-		printf("Couldn't read from socket.\n"),
+		printf("Couldn't read from socket.\n");
     return -1;
 	}
 
   int a1, a2, a3, a4;//IP address
   int p1, p2;//Port number
 
-  if ((sscanf(pasv, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)", &a1, &a2, &a3, &a4, &p1, &p2)) < 0) {
+  if ((sscanf(buff, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)", &a1, &a2, &a3, &a4, &p1, &p2)) < 0) {
 		printf("Error scaning IP and Port.\n");
 		return -1;
 	}
@@ -151,7 +155,7 @@ int enterPassiveMode(ftp_ports ftp) {
     return -1;
   }
 
-  ftp.data_port = fd;
+  ftp->data_port = fd;
 
   return 0;
 }
@@ -165,7 +169,7 @@ int startFileTransmission(ftp_ports * ftp, const char * filename) {
     return -1;
   }
   if (readFromSocket(ftp, buff, 1000)) {
-		printf("Couldn't read from socket.\n"),
+		printf("Couldn't read from socket.\n");
     return -1;
 	}
 
@@ -188,7 +192,7 @@ int saveFile(ftp_ports * ftp, const char * filename) {
 			return -1;
 		}
 
-		if ((bytes = fwrite(buf, 1, bytes, file)) <= 0) {//size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
+		if ((bytes = fwrite(buff, 1, bytes, file)) <= 0) {//size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 			printf("Error writing to file.\n");
 			return -1;
 		}
@@ -204,7 +208,7 @@ int disconnectFromServer(ftp_ports * ftp) {
   char buff[1000];
 
   if (readFromSocket(ftp, buff, 1000)) {
-		printf("Couldn't read from socket.\n"),
+		printf("Couldn't read from socket.\n");
     return -1;
 	}
 

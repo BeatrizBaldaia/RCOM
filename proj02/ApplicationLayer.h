@@ -19,7 +19,7 @@ typedef struct FTP_Ports
 int connectToServer(ftp_ports * ftp, char * ip, int port);
 int login(ftp_ports * ftp, const char * user, const char * password);
 int changeRemoteHostDirectory(ftp_ports * ftp, const char * path);
-int enterPassiveMode(ftp_ports ftp);
+int enterPassiveMode(ftp_ports * ftp);
 int startFileTransmission(ftp_ports * ftp, const char * filename);
 int saveFile(ftp_ports * ftp, const char * filename);
 int disconnectFromServer(ftp_ports * ftp);

@@ -1,3 +1,4 @@
+#pragma once
 #include <string.h>
 #include <netdb.h>
 #include <stdio.h>
