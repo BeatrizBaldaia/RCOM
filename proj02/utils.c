@@ -65,7 +65,7 @@ int parser(link_info * link, const char * str) {
     printf("Error on parsing host\n");
     exit(1);
   }
-  printf("HOST: %s\n", host);
+  printf("HOST: |%s|\n", host);
   link_size -= host_size;
   str += host_size;
 
@@ -74,11 +74,14 @@ int parser(link_info * link, const char * str) {
   int path_size = 0, path_size_aux = 0;
   while((path_size_aux = cutString(str, '/', path_aux)) != 0) {
     sprintf(path, "%s%s/", path, path_aux);
+    printf("%s\n", path_aux);
     link_size -= path_size_aux;
     path_size += path_size_aux;
     str += path_size_aux;
-    path_aux = realloc(path_aux, 1);
+    path_aux = malloc(1);
   }
+  if(strcmp(path, "") == 0)
+	path = "./";
   printf("PATH: %s\n", path);
 
   char * filename  = malloc(link_size + 1);
