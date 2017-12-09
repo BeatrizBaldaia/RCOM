@@ -17,14 +17,6 @@
 #include "ApplicationLayer.h"
 #define SERVER_PORT 21
 
-typedef struct {
-  char * user;
-  char * password;
-  char * host;
-  char * url;
-}ftp_info;
-
-
 int main(int argc, char** argv){
   if(argc != 2){
     printf("Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>\n");
@@ -36,7 +28,7 @@ int main(int argc, char** argv){
   getIpByHost(&info);
   ftp_ports ftp;
 
-  connectToServer(&ftp, info.ip, 21);
+  connectToServer(&ftp, info.ip, SERVER_PORT);
 
   login(&ftp, info.user, info.password);
 
