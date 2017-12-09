@@ -15,7 +15,8 @@ int cutString(const char * str, char ch, char * newStr) {
 }
 
 int parser(link_info * link, const char * str) {
-  int specificUser = (str[6] == '[') ? 1 : 0;
+
+  int specificUser = ((strchr(str, '@')) == NULL) ? 0 : 1;
 
   int link_size = strlen(str);
 
@@ -27,10 +28,10 @@ int parser(link_info * link, const char * str) {
     printf("Error: url didn't begin with 'ftp://'\n");
     exit(1);
   }
-  if(specificUser) {
-    link_size -= 7;
-    str += 7;
 
+  link_size -= 6;
+  str += 6;
+  if(specificUser) {
     char * user = malloc(1);
     int user_size = cutString(str, ':', user);
     if(user_size == 0) {
@@ -47,15 +48,12 @@ int parser(link_info * link, const char * str) {
       exit(1);
     }
 
-    link_size -= (password_size + 1);
-    str += (password_size + 1);
+    link_size -= password_size;
+    str += password_size;
 
     link->user = user;
     link->password = password;
   } else {
-    link_size -= 6;
-    str += 6;
-
     link->user = "anonymous";
     link->password = "1234";
   }
@@ -67,7 +65,7 @@ int parser(link_info * link, const char * str) {
     printf("Error on parsing host\n");
     exit(1);
   }
-  printf("HOST: %s\n", host);
+  printf("HOST: |%s|\n", host);
   link_size -= host_size;
   str += host_size;
 
@@ -76,11 +74,14 @@ int parser(link_info * link, const char * str) {
   int path_size = 0, path_size_aux = 0;
   while((path_size_aux = cutString(str, '/', path_aux)) != 0) {
     sprintf(path, "%s%s/", path, path_aux);
+    printf("%s\n", path_aux);
     link_size -= path_size_aux;
     path_size += path_size_aux;
     str += path_size_aux;
-    path_aux = realloc(path_aux, 1);
+    path_aux = malloc(1);
   }
+  if(strcmp(path, "") == 0)
+	path = "./";
   printf("PATH: %s\n", path);
 
   char * filename  = malloc(link_size + 1);
@@ -103,7 +104,7 @@ int getIpByHost(link_info* link) {
 		return 1;
 	}
 	char* ip = inet_ntoa(*((struct in_addr *) h->h_addr));
-  
+
   if(ip == NULL) {
     printf("Error getting IP from Host name.\n");
     return -1;
